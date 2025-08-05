@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (sdl_context_create(&context, "seasnake", 640, 480) == false) {
+    if (sdl_context_create(&context, "csnake", 640, 480) == false) {
         sdl_context_destroy(&context);
         return 1;
     }
@@ -22,6 +22,19 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+
+        SDL_RenderClear(context.renderer);
+
+        SDL_SetRenderDrawColor(context.renderer, 255, 255, 255, 255);
+        SDL_FRect rect;
+        rect.x = 100.0f;
+        rect.y = 100.0f;
+        rect.w = 50.0f;
+        rect.h = 50.0f;
+        SDL_RenderFillRect(context.renderer, &rect);
+
+        SDL_SetRenderDrawColor(context.renderer, 0, 0, 0, 255);
+        SDL_RenderPresent(context.renderer);
     }
 
     sdl_context_destroy(&context);
