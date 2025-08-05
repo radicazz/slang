@@ -1,15 +1,16 @@
 # csnake
 
-A simple, crossplatform, snake game made with SDL3 & C.
+An epic cross-platform snake game made with C & SDL.
 
 ## Requirements
 
-- A C99 compatible compiler. (MSVC, GCC, Clang)
-- [CMake](https://cmake.org/) `version 3.20+`
+- [C Compiler](https://en.cppreference.com/w/c.html)
+- [Git](https://git-scm.com/downloads)
+- [CMake](https://cmake.org/)
 
 ## Usage
 
-1. Clone this repository.
+1. Clone this repository with submodules.
     - `git clone --recurse-submodules https://github.com/VortexShrimp/csnake.git`
 2. Configure the project.
     - `$ cmake -S . -B build`
