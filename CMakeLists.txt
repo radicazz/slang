@@ -6,7 +6,7 @@ project(csnake C)
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 
 # Add all the source files in the src directory.
-file(GLOB SOURCES "src/*.c")
+file(GLOB_RECURSE SOURCES "src/*.c")
 add_executable(csnake WIN32 ${SOURCES})
 
 target_compile_features(csnake PRIVATE c_std_99)
