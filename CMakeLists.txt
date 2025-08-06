@@ -1,13 +1,18 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 
 project(csnake C)
+
+# Don't allow in-source builds.
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+    message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
+endif()
 
 # SDL has been added as a submodule, so we can include it directly.
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 
 # Add all the source files in the src directory.
-file(GLOB_RECURSE SOURCES "src/*.c")
-add_executable(csnake WIN32 ${SOURCES})
+file(GLOB CSNAKE_SOURCES "src/*.c")
+add_executable(csnake WIN32 ${CSNAKE_SOURCES})
 
 target_compile_features(csnake PRIVATE c_std_99)
 target_link_libraries(csnake PRIVATE SDL3::SDL3)

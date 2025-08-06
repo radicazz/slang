@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+int random_int(int min, int max);
+
 /**
  * @brief 2D integer vector structure.
  */

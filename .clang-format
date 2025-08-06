@@ -16,7 +16,7 @@ PointerAlignment: Left
 
 # Google's column width is tiny by defualt
 
-ColumnLimit: 100
+ColumnLimit: 120
 
 # Stop condensing short things to a single line
 

@@ -3,6 +3,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
+int random_int(int min, int max) {
+    assert(min < max);
+    return (rand() % (max - min + 1)) + min;
+}
+
 void ivec2_init(ivec2_t* vec, int x, int y) {
     assert(vec != NULL);
 
@@ -101,8 +106,7 @@ void dynamic_array_remove(dynamic_array_t* array, size_t index) {
     assert(index < array->size);
 
     if (index < array->size - 1) {
-        memmove((char*)array->data + (index * array->data_size),
-                (char*)array->data + ((index + 1) * array->data_size),
+        memmove((char*)array->data + (index * array->data_size), (char*)array->data + ((index + 1) * array->data_size),
                 (array->size - index - 1) * array->data_size);
     }
 

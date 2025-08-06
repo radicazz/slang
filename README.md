@@ -1,6 +1,6 @@
 # csnake
 
-An epic cross-platform snake game made with C & SDL.
+An cross-platform snake game made with C99 & SDL3.
 
 ## Requirements
 
