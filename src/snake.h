@@ -9,6 +9,10 @@
 #define SNAKE_WINDOW_WIDTH 500
 #define SNAKE_CELL_SIZE 10
 
+// TODO: Find a better way to tick the game.
+// This will suffice for now though.
+#define SNAKE_FPS 30
+
 #define SNAKE_WINDOW_X (SNAKE_WINDOW_WIDTH / SNAKE_CELL_SIZE)
 #define SNAKE_WINDOW_Y (SNAKE_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
 
@@ -38,12 +42,11 @@ typedef struct {
     bool is_running;
 
     ivec2_t head_position;
+    ivec2_t previous_head_position;
     snake_direction_t current_direction;
 
     snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];
 } snake_t;
-
-void snake_init(snake_t* snake);
 
 bool snake_create(snake_t* snake, const char* title);
 void snake_destroy(snake_t* snake);

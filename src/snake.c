@@ -9,12 +9,14 @@ static void handle_sdl_error(const char* message) {
     SDL_ClearError();
 }
 
-void game_reset(snake_t* snake) {
+static void snake_reset(snake_t* snake) {
     assert(snake != NULL);
 
     // Generate random head position.
     snake->head_position.x = random_int(1, SNAKE_WINDOW_X - 1);
     snake->head_position.y = random_int(1, SNAKE_WINDOW_Y - 1);
+
+    snake->previous_head_position = snake->head_position;
 
     snake->current_direction = SNAKE_DIRECTION_UP;
 
@@ -38,28 +40,6 @@ void game_reset(snake_t* snake) {
     }
 }
 
-void snake_init(snake_t* snake) {
-    assert(snake != NULL);
-
-    snake->window = NULL;
-    snake->renderer = NULL;
-
-    snake->is_running = false;
-
-    snake->head_position.x = 0;
-    snake->head_position.y = 0;
-
-    snake->current_direction = SNAKE_DIRECTION_UP;
-
-    // Initialize all cells to black.
-    for (int x = 0; x < SNAKE_WINDOW_X; ++x) {
-        for (int y = 0; y < SNAKE_WINDOW_Y; ++y) {
-            snake_cell_t* cell = &snake->cells[x][y];
-            cell->color = SNAKE_COLOR_BLACK;
-        }
-    }
-}
-
 bool snake_create(snake_t* snake, const char* title) {
     assert(snake != NULL);
     assert(title != NULL);
@@ -70,7 +50,7 @@ bool snake_create(snake_t* snake, const char* title) {
         return false;
     }
 
-    game_reset(snake);
+    snake_reset(snake);
     snake->is_running = true;
 
     return true;
@@ -89,10 +69,10 @@ void snake_destroy(snake_t* snake) {
         snake->window = NULL;
     }
 
-    snake->is_running = false;
-
     snake->head_position.x = 0;
     snake->head_position.y = 0;
+
+    snake->previous_head_position = snake->head_position;
 
     snake->current_direction = SNAKE_DIRECTION_UP;
 
@@ -108,7 +88,7 @@ void snake_destroy(snake_t* snake) {
     }
 }
 
-static void handle_key_event(snake_t* snake, SDL_Scancode scancode) {
+static void snake_handle_key_presses(snake_t* snake, SDL_Scancode scancode) {
     assert(snake != NULL);
 
     switch (scancode) {
@@ -142,6 +122,56 @@ static void handle_key_event(snake_t* snake, SDL_Scancode scancode) {
     }
 }
 
+static void snake_move(snake_t* snake) {
+    assert(snake != NULL);
+
+    snake->previous_head_position = snake->head_position;
+
+    ivec2_t new_head_position = snake->head_position;
+
+    switch (snake->current_direction) {
+        case SNAKE_DIRECTION_UP:
+            new_head_position.y -= 1;
+            break;
+        case SNAKE_DIRECTION_DOWN:
+            new_head_position.y += 1;
+            break;
+        case SNAKE_DIRECTION_LEFT:
+            new_head_position.x -= 1;
+            break;
+        case SNAKE_DIRECTION_RIGHT:
+            new_head_position.x += 1;
+            break;
+    }
+
+    if (new_head_position.x == 0) {
+        new_head_position.x = SNAKE_WINDOW_X - 2;
+    }
+
+    if (new_head_position.y == 0) {
+        new_head_position.y = SNAKE_WINDOW_Y - 2;
+    }
+
+    if (new_head_position.x == SNAKE_WINDOW_X - 1) {
+        new_head_position.x = 1;
+    }
+
+    if (new_head_position.y == SNAKE_WINDOW_Y - 1) {
+        new_head_position.y = 1;
+    }
+
+    snake->head_position = new_head_position;
+}
+
+static void snake_update(snake_t* snake) {
+    assert(snake != NULL);
+
+    snake_move(snake);
+
+    snake->cells[snake->head_position.x][snake->head_position.y].color = SNAKE_COLOR_GREEN;
+    snake->cells[snake->previous_head_position.x][snake->previous_head_position.y].color = SNAKE_COLOR_BLACK;
+}
+
 void snake_handle_events(snake_t* snake) {
     assert(snake != NULL);
 
@@ -152,9 +182,11 @@ void snake_handle_events(snake_t* snake) {
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
-            handle_key_event(snake, event.key.scancode);
+            snake_handle_key_presses(snake, event.key.scancode);
         }
     }
+
+    snake_update(snake);
 }
 
 void snake_render(snake_t* snake) {
@@ -170,8 +202,7 @@ void snake_render(snake_t* snake) {
         for (int y = 0; y < SNAKE_WINDOW_Y; ++y) {
             snake_cell_t* cell = &snake->cells[x][y];
 
-            // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color in one
-            // go.
+            // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
             switch (cell->color) {
                 case SNAKE_COLOR_BLACK:
                     SDL_SetRenderDrawColor(snake->renderer, 0, 0, 0, 255);
