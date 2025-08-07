@@ -9,8 +9,10 @@
 #define SNAKE_WINDOW_WIDTH 500
 #define SNAKE_CELL_SIZE 10
 
+#define SNAKE_WINDOW_X (SNAKE_WINDOW_WIDTH / SNAKE_CELL_SIZE)
+#define SNAKE_WINDOW_Y (SNAKE_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
+
 typedef enum {
-    SNAKE_DIRECTION_UNDEFINED = -1,
     SNAKE_DIRECTION_UP,
     SNAKE_DIRECTION_DOWN,
     SNAKE_DIRECTION_LEFT,
@@ -25,6 +27,11 @@ typedef enum {
 } snake_colors_t;
 
 typedef struct {
+    ivec2_t position;
+    snake_colors_t color;
+} snake_cell_t;
+
+typedef struct {
     SDL_Window* window;
     SDL_Renderer* renderer;
 
@@ -32,6 +39,8 @@ typedef struct {
 
     ivec2_t head_position;
     snake_direction_t current_direction;
+
+    snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];
 } snake_t;
 
 void snake_init(snake_t* snake);
