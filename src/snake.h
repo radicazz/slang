@@ -46,6 +46,9 @@ typedef struct {
     snake_direction_t current_direction;
 
     snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];
+
+    dynamic_array_t food;
+    dynamic_array_t body;
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);

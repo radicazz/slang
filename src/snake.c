@@ -12,12 +12,13 @@ static void handle_sdl_error(const char* message) {
 static void snake_reset(snake_t* snake) {
     assert(snake != NULL);
 
+    // Avoid memory leaks when resetting the game.
+    dynamic_array_destroy(&snake->food);
+    dynamic_array_destroy(&snake->body);
+
     // Generate random head position.
-    snake->head_position.x = random_int(1, SNAKE_WINDOW_X - 1);
-    snake->head_position.y = random_int(1, SNAKE_WINDOW_Y - 1);
-
+    ivec2_random(&snake->head_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
     snake->previous_head_position = snake->head_position;
-
     snake->current_direction = SNAKE_DIRECTION_UP;
 
     // Initialize all cells.
@@ -38,6 +39,24 @@ static void snake_reset(snake_t* snake) {
             }
         }
     }
+
+    dynamic_array_create(&snake->food, sizeof(ivec2_t), 4);
+    for (int i = 0; i < snake->food.capacity; ++i) {
+        ivec2_t food_position;
+
+        // Generate a random position for the food but make sure it doesn't overlap with the snake's head.
+        ivec2_random(&food_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+        while (ivec2_equals(&food_position, &snake->head_position) == true) {
+            // If the food position overlaps with the snake's head, generate a new position.
+            ivec2_random(&food_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+        }
+
+        dynamic_array_append(&snake->food, &food_position);
+
+        snake->cells[food_position.x][food_position.y].color = SNAKE_COLOR_RED;
+    }
+
+    dynamic_array_create(&snake->body, sizeof(ivec2_t), 8);
 }
 
 bool snake_create(snake_t* snake, const char* title) {
@@ -49,6 +68,9 @@ bool snake_create(snake_t* snake, const char* title) {
         handle_sdl_error("Failed to create window and renderer");
         return false;
     }
+
+    dynamic_array_init(&snake->food);
+    dynamic_array_init(&snake->body);
 
     snake_reset(snake);
     snake->is_running = true;
@@ -86,6 +108,9 @@ void snake_destroy(snake_t* snake) {
             cell->color = SNAKE_COLOR_BLACK;
         }
     }
+
+    dynamic_array_destroy(&snake->food);
+    dynamic_array_destroy(&snake->body);
 }
 
 static void snake_handle_key_presses(snake_t* snake, SDL_Scancode scancode) {
