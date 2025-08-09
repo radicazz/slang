@@ -66,6 +66,9 @@ static void snake_reset(snake_t* snake) {
     }
 
     dynamic_array_create(&snake->body, sizeof(ivec2_t), 8);
+
+    sprintf(snake->text_score_buffer, "Score: %zu", snake->body.size);
+    TTF_SetTextString(snake->text_score, snake->text_score_buffer, strlen(snake->text_score_buffer));
 }
 
 bool snake_create(snake_t* snake, const char* title) {
@@ -78,6 +81,17 @@ bool snake_create(snake_t* snake, const char* title) {
 
     dynamic_array_init(&snake->food);
     dynamic_array_init(&snake->body);
+
+    sprintf(snake->text_score_buffer, "Score: %zu", snake->body.size);
+    snake->text_score = TTF_CreateText(snake->app.text_engine, snake->app.default_font, snake->text_score_buffer,
+                                       strlen(snake->text_score_buffer));
+    if (snake->text_score == NULL) {
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_score, 255, 255, 255, 255) == false) {
+        return false;
+    }
 
     snake_reset(snake);
 
@@ -263,6 +277,9 @@ void snake_update(snake_t* snake) {
         }
 
         dynamic_array_append(&snake->body, &new_segment_position);
+
+        sprintf(snake->text_score_buffer, "Score: %zu", snake->body.size);
+        TTF_SetTextString(snake->text_score, snake->text_score_buffer, strlen(snake->text_score_buffer));
     }
 }
 
@@ -299,7 +316,7 @@ void snake_render(snake_t* snake) {
                     SDL_SetRenderDrawColor(snake->app.renderer, 0, 0, 0, 255);
                     break;
                 case SNAKE_COLOR_GRAY:
-                    SDL_SetRenderDrawColor(snake->app.renderer, 128, 128, 128, 255);
+                    SDL_SetRenderDrawColor(snake->app.renderer, 90, 90, 90, 255);
                     break;
                 case SNAKE_COLOR_GREEN:
                     SDL_SetRenderDrawColor(snake->app.renderer, 0, 255, 0, 255);
@@ -317,6 +334,8 @@ void snake_render(snake_t* snake) {
             SDL_RenderFillRect(snake->app.renderer, &rect);
         }
     }
+
+    TTF_DrawRendererText(snake->text_score, 10, 0);
 
     SDL_RenderPresent(snake->app.renderer);
 }

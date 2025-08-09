@@ -19,6 +19,14 @@ add_executable(arcade WIN32 ${ARCADE_SOURCES})
 target_compile_features(arcade PRIVATE c_std_99)
 target_link_libraries(arcade PRIVATE SDL3::SDL3 PRIVATE SDL3_image::SDL3_image PRIVATE SDL3_ttf::SDL3_ttf)
 
+# Copy assets folder over to build directory for game assets.
+add_custom_command(
+    TARGET arcade POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:arcade>/assets"
+)
+
 if (WIN32)
     add_custom_command(
         TARGET arcade POST_BUILD

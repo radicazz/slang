@@ -46,6 +46,9 @@ typedef struct {
 
     dynamic_array_t food;
     dynamic_array_t body;
+
+    TTF_Text* text_score;
+    char text_score_buffer[32];
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);
