@@ -98,7 +98,7 @@ void snake_destroy(snake_t* snake) {
         snake->window = NULL;
     }
 
-    ivec2_init(&snake->head_position, 0, 0);
+    ivec2_set(&snake->head_position, 0, 0);
     snake->previous_head_position = snake->head_position;
     snake->previous_tail_position = snake->head_position;
 
@@ -187,10 +187,13 @@ static void snake_move_head_and_body(snake_t* snake) {
     snake->head_position = new_head_position;
     snake->cells[snake->head_position.x][snake->head_position.y].color = SNAKE_COLOR_GREEN;
 
-    // Move the body, if there is one...
-    if (dynamic_array_is_empty(&snake->body) == false) {
-        ivec2_init(&snake->previous_tail_position, 0, 0);
+    if (dynamic_array_is_empty(&snake->body) == true) {
+        // Snake has no body, so clear the previous head position.
+        snake->cells[snake->previous_head_position.x][snake->previous_head_position.y].color = SNAKE_COLOR_BLACK;
+    } else {
+        ivec2_set(&snake->previous_tail_position, 0, 0);
 
+        // Loop over the snake's body.
         for (size_t i = 0; i < snake->body.size; ++i) {
             ivec2_t* current_body_position = (ivec2_t*)dynamic_array_get(&snake->body, i);
 
@@ -212,8 +215,6 @@ static void snake_move_head_and_body(snake_t* snake) {
                     SNAKE_COLOR_BLACK;
             }
         }
-    } else {
-        snake->cells[snake->previous_head_position.x][snake->previous_head_position.y].color = SNAKE_COLOR_BLACK;
     }
 }
 

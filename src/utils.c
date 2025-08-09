@@ -8,7 +8,7 @@ int random_int(int min, int max) {
     return (rand() % (max - min + 1)) + min;
 }
 
-void ivec2_init(ivec2_t* vec, int x, int y) {
+void ivec2_set(ivec2_t* vec, int x, int y) {
     assert(vec != NULL);
 
     vec->x = x;
