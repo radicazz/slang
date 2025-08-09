@@ -1,6 +1,6 @@
 # Arcade
 
-A cross-platform snake game made with C99 & SDL3.
+Classic arcade games made with C99 & SDL3.
 
 ## Requirements
 

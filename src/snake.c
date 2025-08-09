@@ -9,7 +9,7 @@
 //
 // TODO: add a check for the amount of available positions on the board.
 static ivec2_t snake_random_empty_position(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     ivec2_t position;
     ivec2_random(&position, SNAKE_WINDOW_X - 1, SNAKE_WINDOW_Y - 1);
@@ -23,21 +23,15 @@ static ivec2_t snake_random_empty_position(snake_t* snake) {
     return position;
 }
 
-static void snake_cells_set_color(snake_t* snake, const ivec2_t* position, snake_colors_t color) {
-    assert(snake != NULL);
-    assert(position != NULL);
+static void snake_cell_set_color(snake_t* snake, const ivec2_t* position, snake_colors_t color) {
+    SDL_assert(snake != NULL);
+    SDL_assert(position != NULL);
 
     snake->cells[position->x][position->y].color = color;
 }
 
-static void handle_sdl_error(const char* message) {
-    const char* error = SDL_GetError();
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s: %s", message, error);
-    SDL_ClearError();
-}
-
 static void snake_reset(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     dynamic_array_destroy(&snake->food);
     dynamic_array_destroy(&snake->body);
@@ -59,7 +53,7 @@ static void snake_reset(snake_t* snake) {
     }
 
     snake->head_position = snake_random_empty_position(snake);
-    snake_cells_set_color(snake, &snake->head_position, SNAKE_COLOR_GREEN);
+    snake_cell_set_color(snake, &snake->head_position, SNAKE_COLOR_GREEN);
     snake->previous_head_position = snake->head_position;
     snake->previous_tail_position = snake->head_position;
     snake->current_direction = SNAKE_DIRECTION_UP;
@@ -68,19 +62,17 @@ static void snake_reset(snake_t* snake) {
     for (int i = 0; i < snake->food.capacity; ++i) {
         const ivec2_t food_position = snake_random_empty_position(snake);
         dynamic_array_append(&snake->food, &food_position);
-        snake_cells_set_color(snake, &food_position, SNAKE_COLOR_RED);
+        snake_cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
     }
 
     dynamic_array_create(&snake->body, sizeof(ivec2_t), 8);
 }
 
 bool snake_create(snake_t* snake, const char* title) {
-    assert(snake != NULL);
-    assert(title != NULL);
+    SDL_assert(snake != NULL);
+    SDL_assert(title != NULL);
 
-    if (SDL_CreateWindowAndRenderer(title, SNAKE_WINDOW_WIDTH, SNAKE_WINDOW_HEIGHT, 0, &snake->window,
-                                    &snake->renderer) == false) {
-        handle_sdl_error("Failed to create window and renderer");
+    if (app_create(&snake->app, title, SNAKE_WINDOW_WIDTH, SNAKE_WINDOW_HEIGHT) == false) {
         return false;
     }
 
@@ -89,21 +81,13 @@ bool snake_create(snake_t* snake, const char* title) {
 
     snake_reset(snake);
 
-    return snake->is_running = true;
+    return snake->app.is_running;
 }
 
 void snake_destroy(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
-    if (snake->renderer != NULL) {
-        SDL_DestroyRenderer(snake->renderer);
-        snake->renderer = NULL;
-    }
-
-    if (snake->window != NULL) {
-        SDL_DestroyWindow(snake->window);
-        snake->window = NULL;
-    }
+    app_destroy(&snake->app);
 
     ivec2_set(&snake->head_position, 0, 0);
     snake->previous_head_position = snake->head_position;
@@ -116,7 +100,7 @@ void snake_destroy(snake_t* snake) {
 }
 
 static void snake_handle_key_pressed(snake_t* snake, SDL_Scancode scancode) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     switch (scancode) {
         case SDL_SCANCODE_UP:
@@ -150,7 +134,7 @@ static void snake_handle_key_pressed(snake_t* snake, SDL_Scancode scancode) {
 }
 
 static void snake_move_head_and_body(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     // Save the previous head position.
     snake->previous_head_position = snake->head_position;
@@ -192,11 +176,11 @@ static void snake_move_head_and_body(snake_t* snake) {
 
     // Move the snake's head.
     snake->head_position = new_head_position;
-    snake_cells_set_color(snake, &snake->head_position, SNAKE_COLOR_GREEN);
+    snake_cell_set_color(snake, &snake->head_position, SNAKE_COLOR_GREEN);
 
     if (dynamic_array_is_empty(&snake->body) == true) {
         // Snake has no body, so clear the previous head position.
-        snake_cells_set_color(snake, &snake->previous_head_position, SNAKE_COLOR_BLACK);
+        snake_cell_set_color(snake, &snake->previous_head_position, SNAKE_COLOR_BLACK);
     } else {
         ivec2_set(&snake->previous_tail_position, 0, 0);
 
@@ -208,23 +192,23 @@ static void snake_move_head_and_body(snake_t* snake) {
                 snake->previous_tail_position = *current_body_position;
                 *current_body_position = snake->previous_head_position;
 
-                snake_cells_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
-                snake_cells_set_color(snake, &snake->previous_tail_position, SNAKE_COLOR_BLACK);
+                snake_cell_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
+                snake_cell_set_color(snake, &snake->previous_tail_position, SNAKE_COLOR_BLACK);
             } else {
                 ivec2_t saved_position = snake->previous_tail_position;
                 snake->previous_tail_position = *current_body_position;
 
                 *current_body_position = saved_position;
 
-                snake_cells_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
-                snake_cells_set_color(snake, &snake->previous_tail_position, SNAKE_COLOR_BLACK);
+                snake_cell_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
+                snake_cell_set_color(snake, &snake->previous_tail_position, SNAKE_COLOR_BLACK);
             }
         }
     }
 }
 
 bool snake_test_body_collision(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->body.size; ++i) {
         const ivec2_t* const body_segment = (const ivec2_t* const)dynamic_array_get(&snake->body, i);
@@ -237,7 +221,7 @@ bool snake_test_body_collision(snake_t* snake) {
 }
 
 static bool snake_test_food_collision(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->food.size; ++i) {
         const ivec2_t* const food_position = (const ivec2_t* const)dynamic_array_get(&snake->food, i);
@@ -249,7 +233,7 @@ static bool snake_test_food_collision(snake_t* snake) {
             // Add the new food to the map.
             const ivec2_t new_food_position = snake_random_empty_position(snake);
             dynamic_array_append(&snake->food, &new_food_position);
-            snake_cells_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
+            snake_cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
 
             return true;
         }
@@ -259,7 +243,7 @@ static bool snake_test_food_collision(snake_t* snake) {
 }
 
 static void snake_update(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     snake_move_head_and_body(snake);
 
@@ -284,12 +268,12 @@ static void snake_update(snake_t* snake) {
 }
 
 void snake_handle_events(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) {
-            snake->is_running = false;
+            snake->app.is_running = false;
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
@@ -301,12 +285,11 @@ void snake_handle_events(snake_t* snake) {
 }
 
 void snake_render(snake_t* snake) {
-    assert(snake != NULL);
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->app.window != NULL);
+    SDL_assert(snake->app.renderer != NULL);
 
-    assert(snake->window != NULL);
-    assert(snake->renderer != NULL);
-
-    SDL_RenderClear(snake->renderer);
+    SDL_RenderClear(snake->app.renderer);
 
     // Loop through all the cells and render them based on their color.
     for (int x = 0; x < SNAKE_WINDOW_X; ++x) {
@@ -316,16 +299,16 @@ void snake_render(snake_t* snake) {
             // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
             switch (cell->color) {
                 case SNAKE_COLOR_BLACK:
-                    SDL_SetRenderDrawColor(snake->renderer, 0, 0, 0, 255);
+                    SDL_SetRenderDrawColor(snake->app.renderer, 0, 0, 0, 255);
                     break;
                 case SNAKE_COLOR_GRAY:
-                    SDL_SetRenderDrawColor(snake->renderer, 128, 128, 128, 255);
+                    SDL_SetRenderDrawColor(snake->app.renderer, 128, 128, 128, 255);
                     break;
                 case SNAKE_COLOR_GREEN:
-                    SDL_SetRenderDrawColor(snake->renderer, 0, 255, 0, 255);
+                    SDL_SetRenderDrawColor(snake->app.renderer, 0, 255, 0, 255);
                     break;
                 case SNAKE_COLOR_RED:
-                    SDL_SetRenderDrawColor(snake->renderer, 255, 0, 0, 255);
+                    SDL_SetRenderDrawColor(snake->app.renderer, 255, 0, 0, 255);
                     break;
             }
 
@@ -334,9 +317,9 @@ void snake_render(snake_t* snake) {
             rect.y = cell->position.y * SNAKE_CELL_SIZE;
             rect.w = rect.h = SNAKE_CELL_SIZE;
 
-            SDL_RenderFillRect(snake->renderer, &rect);
+            SDL_RenderFillRect(snake->app.renderer, &rect);
         }
     }
 
-    SDL_RenderPresent(snake->renderer);
+    SDL_RenderPresent(snake->app.renderer);
 }

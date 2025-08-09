@@ -8,17 +8,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    double frame_duration = 1000.0 / SNAKE_FPS;
-
-    while (snake.is_running == true) {
-        uint64_t frame_start = SDL_GetTicks();
-
-        snake_handle_events(&snake);
-        snake_render(&snake);
-
-        uint64_t frame_time = SDL_GetTicks() - frame_start;
-        if (frame_time < frame_duration) {
-            SDL_Delay(frame_duration - frame_time);
+    while (snake.app.is_running == true) {
+        if (app_should_tick(&snake.app, SNAKE_TICK_INTERVAL) == true) {
+            snake_handle_events(&snake);
+            snake_render(&snake);
         }
     }
 

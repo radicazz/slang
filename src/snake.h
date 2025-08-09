@@ -1,20 +1,19 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include <SDL3/SDL.h>
-
+#include "app.h"
 #include "utils.h"
 
 #define SNAKE_WINDOW_HEIGHT 500
 #define SNAKE_WINDOW_WIDTH 500
-#define SNAKE_CELL_SIZE 10
 
-// TODO: Find a better way to tick the game.
-// This will suffice for now though.
-#define SNAKE_FPS 10
+#define SNAKE_CELL_SIZE 20
 
 #define SNAKE_WINDOW_X (SNAKE_WINDOW_WIDTH / SNAKE_CELL_SIZE)
 #define SNAKE_WINDOW_Y (SNAKE_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
+
+#define SNAKE_TICK_RATE 10
+#define SNAKE_TICK_INTERVAL (1000 / SNAKE_TICK_RATE)
 
 typedef enum {
     SNAKE_DIRECTION_UP,
@@ -36,10 +35,7 @@ typedef struct {
 } snake_cell_t;
 
 typedef struct {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-
-    bool is_running;
+    app_t app;
 
     ivec2_t head_position;
     ivec2_t previous_head_position;
