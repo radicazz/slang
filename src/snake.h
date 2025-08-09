@@ -44,7 +44,6 @@ typedef struct {
     ivec2_t head_position;
     ivec2_t previous_head_position;
     ivec2_t previous_tail_position;
-
     snake_direction_t current_direction;
 
     snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];
