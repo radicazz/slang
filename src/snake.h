@@ -11,7 +11,7 @@
 
 // TODO: Find a better way to tick the game.
 // This will suffice for now though.
-#define SNAKE_FPS 30
+#define SNAKE_FPS 10
 
 #define SNAKE_WINDOW_X (SNAKE_WINDOW_WIDTH / SNAKE_CELL_SIZE)
 #define SNAKE_WINDOW_Y (SNAKE_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
@@ -43,6 +43,8 @@ typedef struct {
 
     ivec2_t head_position;
     ivec2_t previous_head_position;
+    ivec2_t previous_tail_position;
+
     snake_direction_t current_direction;
 
     snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+int random_int(int min, int max);
+
 /**
  * @brief 2D integer vector structure.
  */
@@ -19,7 +21,6 @@ void ivec2_subtract(const ivec2_t* a, const ivec2_t* b, ivec2_t* result);
 
 bool ivec2_equals(const ivec2_t* a, const ivec2_t* b);
 
-int random_int(int min, int max);
 void ivec2_random(ivec2_t* vec, int min_x, int max_x, int min_y, int max_y);
 
 /**
@@ -42,5 +43,8 @@ void dynamic_array_append(dynamic_array_t* array, const void* data);
 void dynamic_array_remove(dynamic_array_t* array, size_t index);
 
 void* dynamic_array_get(const dynamic_array_t* array, size_t index);
+void dynamic_array_set(dynamic_array_t* array, size_t index, const void* data);
+
+bool dynamic_array_is_empty(const dynamic_array_t* array);
 
 #endif  // UTILS_H

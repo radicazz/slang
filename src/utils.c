@@ -3,6 +3,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
+int random_int(int min, int max) {
+    assert(min < max);
+    return (rand() % (max - min + 1)) + min;
+}
+
 void ivec2_init(ivec2_t* vec, int x, int y) {
     assert(vec != NULL);
 
@@ -33,11 +38,6 @@ bool ivec2_equals(const ivec2_t* a, const ivec2_t* b) {
     assert(b != NULL);
 
     return (a->x == b->x) && (a->y == b->y);
-}
-
-int random_int(int min, int max) {
-    assert(min < max);
-    return (rand() % (max - min + 1)) + min;
 }
 
 void ivec2_random(ivec2_t* vec, int min_x, int max_x, int min_y, int max_y) {
@@ -140,4 +140,17 @@ void* dynamic_array_get(const dynamic_array_t* array, size_t index) {
     assert(index < array->size);
 
     return (char*)array->data + (index * array->data_size);
+}
+
+void dynamic_array_set(dynamic_array_t* array, size_t index, const void* data) {
+    assert(array != NULL);
+    assert(index < array->size);
+    assert(data != NULL);
+
+    memcpy((char*)array->data + (index * array->data_size), data, array->data_size);
+}
+
+bool dynamic_array_is_empty(const dynamic_array_t* array) {
+    assert(array != NULL);
+    return array->size == 0;
 }

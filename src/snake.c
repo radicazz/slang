@@ -3,6 +3,21 @@
 #include <stdio.h>
 #include <assert.h>
 
+static ivec2_t snake_random_empty_position(snake_t* snake) {
+    assert(snake != NULL);
+
+    ivec2_t position;
+    ivec2_random(&position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+
+    snake_cell_t* cell = &snake->cells[position.x][position.y];
+    while (cell->color != SNAKE_COLOR_BLACK) {
+        ivec2_random(&position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+        cell = &snake->cells[position.x][position.y];
+    }
+
+    return position;
+}
+
 static void handle_sdl_error(const char* message) {
     const char* error = SDL_GetError();
     SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s: %s", message, error);
@@ -16,12 +31,7 @@ static void snake_reset(snake_t* snake) {
     dynamic_array_destroy(&snake->food);
     dynamic_array_destroy(&snake->body);
 
-    // Generate random head position.
-    ivec2_random(&snake->head_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
-    snake->previous_head_position = snake->head_position;
-    snake->current_direction = SNAKE_DIRECTION_UP;
-
-    // Initialize all cells.
+    // Set up the cells & border.
     for (int x = 0; x < SNAKE_WINDOW_X; ++x) {
         for (int y = 0; y < SNAKE_WINDOW_Y; ++y) {
             snake_cell_t* cell = &snake->cells[x][y];
@@ -32,27 +42,25 @@ static void snake_reset(snake_t* snake) {
             // Set the border cells to gray, the head cell to green, and the rest to black.
             if (x == 0 || x == SNAKE_WINDOW_X - 1 || y == 0 || y == SNAKE_WINDOW_Y - 1) {
                 cell->color = SNAKE_COLOR_GRAY;
-            } else if (x == snake->head_position.x && y == snake->head_position.y) {
-                cell->color = SNAKE_COLOR_GREEN;
             } else {
                 cell->color = SNAKE_COLOR_BLACK;
             }
         }
     }
 
+    // Generate & set the head's position.
+    snake->head_position = snake_random_empty_position(snake);
+    snake->cells[snake->head_position.x][snake->head_position.y].color = SNAKE_COLOR_GREEN;
+
+    snake->previous_head_position = snake->head_position;
+    snake->previous_tail_position = snake->head_position;
+
+    snake->current_direction = SNAKE_DIRECTION_UP;
+
     dynamic_array_create(&snake->food, sizeof(ivec2_t), 4);
     for (int i = 0; i < snake->food.capacity; ++i) {
-        ivec2_t food_position;
-
-        // Generate a random position for the food but make sure it doesn't overlap with the snake's head.
-        ivec2_random(&food_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
-        while (ivec2_equals(&food_position, &snake->head_position) == true) {
-            // If the food position overlaps with the snake's head, generate a new position.
-            ivec2_random(&food_position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
-        }
-
+        const ivec2_t food_position = snake_random_empty_position(snake);
         dynamic_array_append(&snake->food, &food_position);
-
         snake->cells[food_position.x][food_position.y].color = SNAKE_COLOR_RED;
     }
 
@@ -73,9 +81,8 @@ bool snake_create(snake_t* snake, const char* title) {
     dynamic_array_init(&snake->body);
 
     snake_reset(snake);
-    snake->is_running = true;
 
-    return true;
+    return snake->is_running = true;
 }
 
 void snake_destroy(snake_t* snake) {
@@ -91,29 +98,17 @@ void snake_destroy(snake_t* snake) {
         snake->window = NULL;
     }
 
-    snake->head_position.x = 0;
-    snake->head_position.y = 0;
-
+    ivec2_init(&snake->head_position, 0, 0);
     snake->previous_head_position = snake->head_position;
+    snake->previous_tail_position = snake->head_position;
 
     snake->current_direction = SNAKE_DIRECTION_UP;
-
-    for (int x = 0; x < SNAKE_WINDOW_X; ++x) {
-        for (int y = 0; y < SNAKE_WINDOW_Y; ++y) {
-            snake_cell_t* cell = &snake->cells[x][y];
-
-            cell->position.x = x;
-            cell->position.y = y;
-
-            cell->color = SNAKE_COLOR_BLACK;
-        }
-    }
 
     dynamic_array_destroy(&snake->food);
     dynamic_array_destroy(&snake->body);
 }
 
-static void snake_handle_key_presses(snake_t* snake, SDL_Scancode scancode) {
+static void snake_handle_key_pressed(snake_t* snake, SDL_Scancode scancode) {
     assert(snake != NULL);
 
     switch (scancode) {
@@ -147,11 +142,13 @@ static void snake_handle_key_presses(snake_t* snake, SDL_Scancode scancode) {
     }
 }
 
-static void snake_move(snake_t* snake) {
+static void snake_move_head_and_body(snake_t* snake) {
     assert(snake != NULL);
 
+    // Save the previous head position.
     snake->previous_head_position = snake->head_position;
 
+    // Temporary head position to test collisions with border.
     ivec2_t new_head_position = snake->head_position;
 
     switch (snake->current_direction) {
@@ -169,6 +166,7 @@ static void snake_move(snake_t* snake) {
             break;
     }
 
+    // Wrap around the screen edges.
     if (new_head_position.x == 0) {
         new_head_position.x = SNAKE_WINDOW_X - 2;
     }
@@ -185,16 +183,91 @@ static void snake_move(snake_t* snake) {
         new_head_position.y = 1;
     }
 
+    // Move the snake's head.
     snake->head_position = new_head_position;
+    snake->cells[snake->head_position.x][snake->head_position.y].color = SNAKE_COLOR_GREEN;
+
+    // Move the body, if there is one...
+    if (dynamic_array_is_empty(&snake->body) == false) {
+        ivec2_init(&snake->previous_tail_position, 0, 0);
+
+        for (size_t i = 0; i < snake->body.size; ++i) {
+            ivec2_t* current_body_position = (ivec2_t*)dynamic_array_get(&snake->body, i);
+
+            if (i == 0) {
+                snake->previous_tail_position = *current_body_position;
+                *current_body_position = snake->previous_head_position;
+
+                snake->cells[current_body_position->x][current_body_position->y].color = SNAKE_COLOR_GREEN;
+                snake->cells[snake->previous_tail_position.x][snake->previous_tail_position.y].color =
+                    SNAKE_COLOR_BLACK;
+            } else {
+                ivec2_t saved_position = snake->previous_tail_position;
+                snake->previous_tail_position = *current_body_position;
+
+                *current_body_position = saved_position;
+
+                snake->cells[current_body_position->x][current_body_position->y].color = SNAKE_COLOR_GREEN;
+                snake->cells[snake->previous_tail_position.x][snake->previous_tail_position.y].color =
+                    SNAKE_COLOR_BLACK;
+            }
+        }
+    } else {
+        snake->cells[snake->previous_head_position.x][snake->previous_head_position.y].color = SNAKE_COLOR_BLACK;
+    }
+}
+
+bool snake_test_body_collision(snake_t* snake) {
+    assert(snake != NULL);
+
+    // TODO: Test if the snake's head collides with its body.
+    return false;
+}
+
+static bool snake_test_food_collision(snake_t* snake) {
+    assert(snake != NULL);
+
+    for (size_t i = 0; i < snake->food.size; ++i) {
+        ivec2_t* food_position = (ivec2_t*)dynamic_array_get(&snake->food, i);
+
+        // Food hit.
+        if (ivec2_equals(&snake->head_position, food_position) == true) {
+            dynamic_array_remove(&snake->food, i);
+
+            // Add the new food to the map.
+            ivec2_t new_food_position = snake_random_empty_position(snake);
+            dynamic_array_append(&snake->food, &new_food_position);
+            snake->cells[new_food_position.x][new_food_position.y].color = SNAKE_COLOR_RED;
+
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static void snake_update(snake_t* snake) {
     assert(snake != NULL);
 
-    snake_move(snake);
+    snake_move_head_and_body(snake);
 
-    snake->cells[snake->head_position.x][snake->head_position.y].color = SNAKE_COLOR_GREEN;
-    snake->cells[snake->previous_head_position.x][snake->previous_head_position.y].color = SNAKE_COLOR_BLACK;
+    if (snake_test_body_collision(snake) == true) {
+        // TODO: Handle body collision (e.g., game over)
+        return;
+    }
+
+    // Grow the snake if it hits food.
+    if (snake_test_food_collision(snake) == true) {
+        ivec2_t new_segment_position;
+
+        if (dynamic_array_is_empty(&snake->body) == true) {
+            new_segment_position = snake->previous_head_position;
+        } else {
+            new_segment_position = snake->previous_tail_position;
+        }
+
+        dynamic_array_append(&snake->body, &new_segment_position);
+    }
 }
 
 void snake_handle_events(snake_t* snake) {
@@ -207,7 +280,7 @@ void snake_handle_events(snake_t* snake) {
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
-            snake_handle_key_presses(snake, event.key.scancode);
+            snake_handle_key_pressed(snake, event.key.scancode);
         }
     }
 

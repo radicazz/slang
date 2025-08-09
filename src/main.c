@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[]) {
     snake_t snake;
-    if (snake_create(&snake, "Snake Game") == false) {
+    if (snake_create(&snake, "snake") == false) {
         return 1;
     }
 
