@@ -1,4 +1,4 @@
-# csnake
+# Arcade
 
 A cross-platform snake game made with C99 & SDL3.
 
@@ -13,7 +13,7 @@ A cross-platform snake game made with C99 & SDL3.
 ## Usage
 
 1. Clone this repository with submodules.
-    - `$ git clone --recurse-submodules https://github.com/VortexShrimp/csnake.git`
+    - `$ git clone --recurse-submodules https://github.com/VortexShrimp/arcade.git`
 2. Configure the project.
     - `$ cmake -S . -B build`
 3. Build the project.
