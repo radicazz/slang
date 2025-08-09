@@ -35,7 +35,7 @@ void app_destroy(app_t* app) {
     }
 }
 
-bool app_should_tick(app_t* app, uint64_t tick_interval) {
+bool app_process_time(app_t* app, uint64_t tick_interval) {
     SDL_assert(app != NULL);
 
     uint64_t current_time = SDL_GetTicks();

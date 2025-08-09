@@ -43,7 +43,7 @@ static void snake_reset(snake_t* snake) {
             cell->position.x = x;
             cell->position.y = y;
 
-            // Set the border cells to gray, the head cell to green, and the rest to black.
+            // Set the border cells to gray and the rest to black.
             if (x == 0 || x == SNAKE_WINDOW_X - 1 || y == 0 || y == SNAKE_WINDOW_Y - 1) {
                 cell->color = SNAKE_COLOR_GRAY;
             } else {
@@ -242,7 +242,7 @@ static bool snake_test_food_collision(snake_t* snake) {
     return false;
 }
 
-static void snake_update(snake_t* snake) {
+void snake_update(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     snake_move_head_and_body(snake);
@@ -256,7 +256,6 @@ static void snake_update(snake_t* snake) {
     // Grow the snake if it hits food.
     if (snake_test_food_collision(snake) == true) {
         ivec2_t new_segment_position;
-
         if (dynamic_array_is_empty(&snake->body) == true) {
             new_segment_position = snake->previous_head_position;
         } else {
@@ -280,8 +279,6 @@ void snake_handle_events(snake_t* snake) {
             snake_handle_key_pressed(snake, event.key.scancode);
         }
     }
-
-    snake_update(snake);
 }
 
 void snake_render(snake_t* snake) {

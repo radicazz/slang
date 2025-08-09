@@ -3,6 +3,9 @@
 
 #include <SDL3/SDL.h>
 
+/**
+ * @brief Represents the window state.
+ */
 typedef struct {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -16,6 +19,15 @@ typedef struct {
 bool app_create(app_t* app, const char* title, int width, int height);
 void app_destroy(app_t* app);
 
-bool app_should_tick(app_t* app, uint64_t tick_interval);
+/**
+ * @brief Checks if the application should tick based on the tick interval.
+ *
+ * Use this to run code at regular intervals.
+ *
+ * @param app The application instance.
+ * @param tick_interval The desired tick interval in milliseconds.
+ * @return True if the application should tick, false otherwise.
+ */
+bool app_process_time(app_t* app, uint64_t tick_interval);
 
 #endif  // APP_H

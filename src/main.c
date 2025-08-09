@@ -9,10 +9,12 @@ int main(int argc, char* argv[]) {
     }
 
     while (snake.app.is_running == true) {
-        if (app_should_tick(&snake.app, SNAKE_TICK_INTERVAL) == true) {
-            snake_handle_events(&snake);
-            snake_render(&snake);
+        snake_handle_events(&snake);
+        if (app_process_time(&snake.app, SNAKE_TICK_INTERVAL) == true) {
+            snake_update(&snake);
         }
+
+        snake_render(&snake);
     }
 
     snake_destroy(&snake);

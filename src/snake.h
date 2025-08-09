@@ -4,8 +4,8 @@
 #include "app.h"
 #include "utils.h"
 
-#define SNAKE_WINDOW_HEIGHT 500
-#define SNAKE_WINDOW_WIDTH 500
+#define SNAKE_WINDOW_HEIGHT 700
+#define SNAKE_WINDOW_WIDTH 700
 
 #define SNAKE_CELL_SIZE 20
 
@@ -52,6 +52,8 @@ bool snake_create(snake_t* snake, const char* title);
 void snake_destroy(snake_t* snake);
 
 void snake_handle_events(snake_t* snake);
+
+void snake_update(snake_t* snake);
 void snake_render(snake_t* snake);
 
 #endif  // SNAKE_H
