@@ -1,11 +1,13 @@
 #include "utils.h"
 
+#include <SDL3/SDL.h>
+
 #include <assert.h>
 #include <stdlib.h>
 
-int random_int(int min, int max) {
-    assert(min < max);
-    return (rand() % (max - min + 1)) + min;
+static int random_int(int max) {
+    assert(max > 0);
+    return SDL_rand(max) + 1;
 }
 
 void ivec2_set(ivec2_t* vec, int x, int y) {
@@ -40,13 +42,13 @@ bool ivec2_equals(const ivec2_t* a, const ivec2_t* b) {
     return (a->x == b->x) && (a->y == b->y);
 }
 
-void ivec2_random(ivec2_t* vec, int min_x, int max_x, int min_y, int max_y) {
+void ivec2_random(ivec2_t* vec, int max_x, int max_y) {
     assert(vec != NULL);
-    assert(min_x < max_x);
-    assert(min_y < max_y);
+    assert(max_x > 0);
+    assert(max_y > 0);
 
-    vec->x = random_int(min_x, max_x);
-    vec->y = random_int(min_y, max_y);
+    vec->x = random_int(max_x);
+    vec->y = random_int(max_y);
 }
 
 void dynamic_array_init(dynamic_array_t* array) {

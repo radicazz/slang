@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-int random_int(int min, int max);
-
 /**
  * @brief 2D integer vector structure.
  */
@@ -21,7 +19,7 @@ void ivec2_subtract(const ivec2_t* a, const ivec2_t* b, ivec2_t* result);
 
 bool ivec2_equals(const ivec2_t* a, const ivec2_t* b);
 
-void ivec2_random(ivec2_t* vec, int min_x, int max_x, int min_y, int max_y);
+void ivec2_random(ivec2_t* vec, int max_x, int max_y);
 
 /**
  * @brief Contiguous array structure that can dynamically grow.

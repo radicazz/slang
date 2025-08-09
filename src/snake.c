@@ -12,11 +12,11 @@ static ivec2_t snake_random_empty_position(snake_t* snake) {
     assert(snake != NULL);
 
     ivec2_t position;
-    ivec2_random(&position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+    ivec2_random(&position, SNAKE_WINDOW_X - 1, SNAKE_WINDOW_Y - 1);
 
     snake_cell_t* cell = &snake->cells[position.x][position.y];
     while (cell->color != SNAKE_COLOR_BLACK) {
-        ivec2_random(&position, 1, SNAKE_WINDOW_X - 1, 1, SNAKE_WINDOW_Y - 1);
+        ivec2_random(&position, SNAKE_WINDOW_X - 1, SNAKE_WINDOW_Y - 1);
         cell = &snake->cells[position.x][position.y];
     }
 
