@@ -1,5 +1,39 @@
 #include "app.h"
 
+static bool app_create_text(app_t* app) {
+    SDL_assert(app != NULL);
+
+    if (TTF_Init() == false) {
+        return false;
+    }
+
+    app->text_engine = TTF_CreateRendererTextEngine(app->renderer);
+    if (app->text_engine == NULL) {
+        return false;
+    }
+
+    app->default_font = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
+    if (app->default_font == NULL) {
+        return false;
+    }
+
+    return true;
+}
+
+static void app_destroy_text(app_t* app) {
+    SDL_assert(app != NULL);
+
+    if (app->default_font != NULL) {
+        TTF_CloseFont(app->default_font);
+    }
+
+    if (app->text_engine != NULL) {
+        TTF_DestroyRendererTextEngine(app->text_engine);
+    }
+
+    TTF_Quit();
+}
+
 bool app_create(app_t* app, const char* title, int width, int height) {
     SDL_assert(app != NULL);
     SDL_assert(title != NULL);
@@ -21,17 +55,7 @@ bool app_create(app_t* app, const char* title, int width, int height) {
     app->last_tick_time = SDL_GetTicks();
     app->tick_accumulator = 0;
 
-    if (TTF_Init() == false) {
-        return false;
-    }
-
-    app->text_engine = TTF_CreateRendererTextEngine(app->renderer);
-    if (app->text_engine == NULL) {
-        return false;
-    }
-
-    app->default_font = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
-    if (app->default_font == NULL) {
+    if (app_create_text(app) == false) {
         return false;
     }
 
@@ -41,15 +65,7 @@ bool app_create(app_t* app, const char* title, int width, int height) {
 void app_destroy(app_t* app) {
     SDL_assert(app != NULL);
 
-    if (app->default_font != NULL) {
-        TTF_CloseFont(app->default_font);
-    }
-
-    if (app->text_engine != NULL) {
-        TTF_DestroyRendererTextEngine(app->text_engine);
-    }
-
-    TTF_Quit();
+    app_destroy_text(app);
 
     app->last_tick_time = 0;
     app->tick_accumulator = 0;
