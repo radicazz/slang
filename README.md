@@ -13,7 +13,7 @@ Classic arcade games made with C99 & SDL3.
 ## Usage
 
 1. Clone this repository with submodules.
-    - `$ git clone --recurse-submodules https://github.com/VortexShrimp/arcade.git`
+    - `$ git clone --recurse-submodules https://github.com/radicazz/arcade.git`
 2. Configure the project.
     - `$ cmake -S . -B build`
 3. Build the project.
