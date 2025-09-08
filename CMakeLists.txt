@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(arcade C)
+project(slang C)
 
 # Don't allow in-source builds.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
@@ -12,37 +12,37 @@ add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_image EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
 
-file(GLOB ARCADE_SOURCES "src/*.c")
+file(GLOB SLANG_SOURCES "src/*.c")
 
-add_executable(arcade WIN32 ${ARCADE_SOURCES})
+add_executable(slang WIN32 ${SLANG_SOURCES})
 
-target_compile_features(arcade PRIVATE c_std_99)
-target_link_libraries(arcade PRIVATE SDL3::SDL3 PRIVATE SDL3_image::SDL3_image PRIVATE SDL3_ttf::SDL3_ttf)
+target_compile_features(slang PRIVATE c_std_99)
+target_link_libraries(slang PRIVATE SDL3::SDL3 PRIVATE SDL3_image::SDL3_image PRIVATE SDL3_ttf::SDL3_ttf)
 
 # Copy assets folder over to build directory for game assets.
 add_custom_command(
-    TARGET arcade POST_BUILD
+    TARGET slang POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:arcade>/assets"
+        "$<TARGET_FILE_DIR:slang>/assets"
 )
 
 if (WIN32)
     add_custom_command(
-        TARGET arcade POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:arcade>
+        TARGET slang POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:slang>
         VERBATIM
     )
 
     add_custom_command(
-        TARGET arcade POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3_image::SDL3_image-shared> $<TARGET_FILE_DIR:arcade>
+        TARGET slang POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3_image::SDL3_image-shared> $<TARGET_FILE_DIR:slang>
         VERBATIM
     )
 
     add_custom_command(
-        TARGET arcade POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared> $<TARGET_FILE_DIR:arcade>
+        TARGET slang POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3_ttf::SDL3_ttf-shared> $<TARGET_FILE_DIR:slang>
         VERBATIM
     )
 endif()
