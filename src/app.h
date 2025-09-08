@@ -4,15 +4,17 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+#define APP_WINDOW_WIDTH 500
+#define APP_WINDOW_HEIGHT 500
+
 /**
  * @brief Represents the window state.
  */
 typedef struct {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-
-    TTF_TextEngine* text_engine;
-    TTF_Font* default_font;
+    SDL_Window* sdl_window;
+    SDL_Renderer* sdl_renderer;
+    TTF_TextEngine* ttf_text_engine;
+    TTF_Font* ttf_font_default;
 
     bool is_running;
 

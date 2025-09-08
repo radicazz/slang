@@ -7,13 +7,13 @@ static bool app_create_text(app_t* app) {
         return false;
     }
 
-    app->text_engine = TTF_CreateRendererTextEngine(app->renderer);
-    if (app->text_engine == NULL) {
+    app->ttf_text_engine = TTF_CreateRendererTextEngine(app->sdl_renderer);
+    if (app->ttf_text_engine == NULL) {
         return false;
     }
 
-    app->default_font = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
-    if (app->default_font == NULL) {
+    app->ttf_font_default = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
+    if (app->ttf_font_default == NULL) {
         return false;
     }
 
@@ -23,12 +23,12 @@ static bool app_create_text(app_t* app) {
 static void app_destroy_text(app_t* app) {
     SDL_assert(app != NULL);
 
-    if (app->default_font != NULL) {
-        TTF_CloseFont(app->default_font);
+    if (app->ttf_font_default != NULL) {
+        TTF_CloseFont(app->ttf_font_default);
     }
 
-    if (app->text_engine != NULL) {
-        TTF_DestroyRendererTextEngine(app->text_engine);
+    if (app->ttf_text_engine != NULL) {
+        TTF_DestroyRendererTextEngine(app->ttf_text_engine);
     }
 
     TTF_Quit();
@@ -40,13 +40,13 @@ bool app_create(app_t* app, const char* title, int width, int height) {
     SDL_assert(width > 0);
     SDL_assert(height > 0);
 
-    app->window = NULL;
-    app->renderer = NULL;
+    app->sdl_window = NULL;
+    app->sdl_renderer = NULL;
 
-    app->text_engine = NULL;
-    app->default_font = NULL;
+    app->ttf_text_engine = NULL;
+    app->ttf_font_default = NULL;
 
-    if (SDL_CreateWindowAndRenderer(title, width, height, 0, &app->window, &app->renderer) == false) {
+    if (SDL_CreateWindowAndRenderer(title, width, height, 0, &app->sdl_window, &app->sdl_renderer) == false) {
         return false;
     }
 
@@ -70,14 +70,14 @@ void app_destroy(app_t* app) {
     app->last_tick_time = 0;
     app->tick_accumulator = 0;
 
-    if (app->renderer != NULL) {
-        SDL_DestroyRenderer(app->renderer);
-        app->renderer = NULL;
+    if (app->sdl_renderer != NULL) {
+        SDL_DestroyRenderer(app->sdl_renderer);
+        app->sdl_renderer = NULL;
     }
 
-    if (app->window != NULL) {
-        SDL_DestroyWindow(app->window);
-        app->window = NULL;
+    if (app->sdl_window != NULL) {
+        SDL_DestroyWindow(app->sdl_window);
+        app->sdl_window = NULL;
     }
 }
 

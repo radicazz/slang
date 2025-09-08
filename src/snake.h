@@ -4,14 +4,13 @@
 #include "app.h"
 #include "utils.h"
 
-#define SNAKE_WINDOW_HEIGHT 700
-#define SNAKE_WINDOW_WIDTH 700
+#define SNAKE_CELL_SIZE 10
 
-#define SNAKE_CELL_SIZE 20
+#define SNAKE_GRID_X (APP_WINDOW_WIDTH / SNAKE_CELL_SIZE)
+#define SNAKE_GRID_Y (APP_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
 
-#define SNAKE_WINDOW_X (SNAKE_WINDOW_WIDTH / SNAKE_CELL_SIZE)
-#define SNAKE_WINDOW_Y (SNAKE_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
-
+// This is currently used to control the framerate, not the tickrate.
+// TODO: Implement proper tickrate control separate from framerate.
 #define SNAKE_TICK_RATE 10
 #define SNAKE_TICK_INTERVAL (1000 / SNAKE_TICK_RATE)
 
@@ -37,15 +36,17 @@ typedef struct {
 typedef struct {
     app_t app;
 
-    ivec2_t head_position;
-    ivec2_t previous_head_position;
-    ivec2_t previous_tail_position;
     snake_direction_t current_direction;
 
-    snake_cell_t cells[SNAKE_WINDOW_X][SNAKE_WINDOW_Y];
+    ivec2_t position_head;
+    ivec2_t previous_position_head;
 
-    dynamic_array_t food;
-    dynamic_array_t body;
+    ivec2_t previous_position_tail;
+
+    snake_cell_t cells[SNAKE_GRID_X][SNAKE_GRID_Y];
+
+    dynamic_array_t array_food;
+    dynamic_array_t array_body;
 
     TTF_Text* text_score;
     char text_score_buffer[32];
