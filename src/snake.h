@@ -31,11 +31,12 @@ typedef struct {
 typedef struct {
     app_t app;
 
+    bool is_paused;
+
     snake_direction_t current_direction;
 
     ivec2_t position_head;
     ivec2_t previous_position_head;
-
     ivec2_t previous_position_tail;
 
     snake_cell_t cells[SNAKE_GRID_X][SNAKE_GRID_Y];

@@ -8,7 +8,7 @@
 // in the while loop.
 //
 // TODO: add a check for the amount of available positions on the board.
-static ivec2_t snake_random_empty_position(snake_t* snake) {
+static ivec2_t snake_get_random_empty_position(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     ivec2_t position;
@@ -52,7 +52,7 @@ static void snake_reset(snake_t* snake) {
         }
     }
 
-    snake->position_head = snake_random_empty_position(snake);
+    snake->position_head = snake_get_random_empty_position(snake);
     snake_cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
     snake->previous_position_head = snake->position_head;
     snake->previous_position_tail = snake->position_head;
@@ -60,7 +60,7 @@ static void snake_reset(snake_t* snake) {
 
     dynamic_array_create(&snake->array_food, sizeof(ivec2_t), 8);
     for (int i = 0; i < snake->array_food.capacity; ++i) {
-        const ivec2_t food_position = snake_random_empty_position(snake);
+        const ivec2_t food_position = snake_get_random_empty_position(snake);
         dynamic_array_append(&snake->array_food, &food_position);
         snake_cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
     }
@@ -113,8 +113,12 @@ void snake_destroy(snake_t* snake) {
     dynamic_array_destroy(&snake->array_body);
 }
 
-static void snake_handle_key_pressed(snake_t* snake, SDL_Scancode scancode) {
+static void snake_handle_movement_keys(snake_t* snake, SDL_Scancode scancode) {
     SDL_assert(snake != NULL);
+
+    if (snake->is_paused == true) {
+        return;
+    }
 
     switch (scancode) {
         case SDL_SCANCODE_UP:
@@ -242,7 +246,7 @@ static bool snake_test_food_collision(snake_t* snake) {
             dynamic_array_remove(&snake->array_food, i);
 
             // Add the new array_food to the map.
-            const ivec2_t new_food_position = snake_random_empty_position(snake);
+            const ivec2_t new_food_position = snake_get_random_empty_position(snake);
             dynamic_array_append(&snake->array_food, &new_food_position);
             snake_cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
 
@@ -255,6 +259,10 @@ static bool snake_test_food_collision(snake_t* snake) {
 
 void snake_update_fixed(snake_t* snake) {
     SDL_assert(snake != NULL);
+
+    if (snake->is_paused == true) {
+        return;
+    }
 
     snake_move_head_and_body(snake);
 
@@ -290,7 +298,11 @@ void snake_handle_events(snake_t* snake) {
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
-            snake_handle_key_pressed(snake, event.key.scancode);
+            if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
+                snake->is_paused = !snake->is_paused;
+            }
+
+            snake_handle_movement_keys(snake, event.key.scancode);
         }
     }
 }
