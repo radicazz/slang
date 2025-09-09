@@ -9,14 +9,14 @@ static int random_int(int max) {
     return SDL_rand(max) + 1;
 }
 
-void ivec2_set(ivec2_t* vec, int x, int y) {
+void vector2i_set(vector2i_t* vec, int x, int y) {
     assert(vec != NULL);
 
     vec->x = x;
     vec->y = y;
 }
 
-void ivec2_add(const ivec2_t* a, const ivec2_t* b, ivec2_t* result) {
+void vector2i_add(const vector2i_t* a, const vector2i_t* b, vector2i_t* result) {
     assert(a != NULL);
     assert(b != NULL);
     assert(result != NULL);
@@ -25,7 +25,7 @@ void ivec2_add(const ivec2_t* a, const ivec2_t* b, ivec2_t* result) {
     result->y = a->y + b->y;
 }
 
-void ivec2_subtract(const ivec2_t* a, const ivec2_t* b, ivec2_t* result) {
+void vector2i_subtract(const vector2i_t* a, const vector2i_t* b, vector2i_t* result) {
     assert(a != NULL);
     assert(b != NULL);
     assert(result != NULL);
@@ -34,14 +34,14 @@ void ivec2_subtract(const ivec2_t* a, const ivec2_t* b, ivec2_t* result) {
     result->y = a->y - b->y;
 }
 
-bool ivec2_equals(const ivec2_t* a, const ivec2_t* b) {
+bool vector2i_equals(const vector2i_t* a, const vector2i_t* b) {
     assert(a != NULL);
     assert(b != NULL);
 
     return (a->x == b->x) && (a->y == b->y);
 }
 
-void ivec2_random(ivec2_t* vec, int max_x, int max_y) {
+void vector2i_random(vector2i_t* vec, int max_x, int max_y) {
     assert(vec != NULL);
     assert(max_x > 0);
     assert(max_y > 0);

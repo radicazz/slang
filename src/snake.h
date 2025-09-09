@@ -25,7 +25,7 @@ typedef enum {
 } snake_colors_t;
 
 typedef struct {
-    ivec2_t position;
+    vector2i_t position;
     snake_colors_t color;
 } snake_cell_t;
 
@@ -36,9 +36,9 @@ typedef struct {
 
     snake_direction_t current_direction;
 
-    ivec2_t position_head;
-    ivec2_t previous_position_head;
-    ivec2_t previous_position_tail;
+    vector2i_t position_head;
+    vector2i_t previous_position_head;
+    vector2i_t previous_position_tail;
 
     snake_cell_t cells[SNAKE_GRID_X][SNAKE_GRID_Y];
 

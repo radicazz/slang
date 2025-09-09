@@ -8,22 +8,22 @@
 // in the while loop.
 //
 // TODO: add a check for the amount of available positions on the board.
-static ivec2_t get_random_empty_position(snake_t* snake) {
+static vector2i_t get_random_empty_position(snake_t* snake) {
     SDL_assert(snake != NULL);
 
-    ivec2_t position;
-    ivec2_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
+    vector2i_t position;
+    vector2i_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
 
     snake_cell_t* cell = &snake->cells[position.x][position.y];
     while (cell->color != SNAKE_COLOR_BLACK) {
-        ivec2_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
+        vector2i_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
         cell = &snake->cells[position.x][position.y];
     }
 
     return position;
 }
 
-static void cell_set_color(snake_t* snake, const ivec2_t* position, snake_colors_t color) {
+static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_colors_t color) {
     SDL_assert(snake != NULL);
     SDL_assert(position != NULL);
 
@@ -58,14 +58,14 @@ static void reset(snake_t* snake) {
     snake->previous_position_tail = snake->position_head;
     snake->current_direction = SNAKE_DIRECTION_UP;
 
-    dynamic_array_create(&snake->array_food, sizeof(ivec2_t), 8);
+    dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8);
     for (int i = 0; i < snake->array_food.capacity; ++i) {
-        const ivec2_t food_position = get_random_empty_position(snake);
+        const vector2i_t food_position = get_random_empty_position(snake);
         dynamic_array_append(&snake->array_food, &food_position);
         cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
     }
 
-    dynamic_array_create(&snake->array_body, sizeof(ivec2_t), 8);
+    dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
 
     sprintf(snake->text_score_buffer, "Score: %zu", snake->array_body.size);
     TTF_SetTextString(snake->text_score, snake->text_score_buffer, strlen(snake->text_score_buffer));
@@ -103,9 +103,9 @@ void snake_destroy(snake_t* snake) {
 
     application_destroy(&snake->app);
 
-    ivec2_set(&snake->position_head, 0, 0);
-    ivec2_set(&snake->previous_position_head, 0, 0);
-    ivec2_set(&snake->previous_position_tail, 0, 0);
+    vector2i_set(&snake->position_head, 0, 0);
+    vector2i_set(&snake->previous_position_head, 0, 0);
+    vector2i_set(&snake->previous_position_tail, 0, 0);
 
     snake->current_direction = SNAKE_DIRECTION_UP;
 
@@ -158,7 +158,7 @@ static void move_head_and_body(snake_t* snake) {
     snake->previous_position_head = snake->position_head;
 
     // Temporary head position to test collisions with border.
-    ivec2_t new_head_position = snake->position_head;
+    vector2i_t new_head_position = snake->position_head;
 
     switch (snake->current_direction) {
         case SNAKE_DIRECTION_UP:
@@ -200,17 +200,17 @@ static void move_head_and_body(snake_t* snake) {
         // Snake has no array_body, so clear the previous head position.
         cell_set_color(snake, &snake->previous_position_head, SNAKE_COLOR_BLACK);
     } else {
-        ivec2_set(&snake->previous_position_tail, 0, 0);
+        vector2i_set(&snake->previous_position_tail, 0, 0);
 
         // Loop over the snake's array_body.
         for (size_t i = 0; i < snake->array_body.size; ++i) {
-            ivec2_t* const current_body_position = (ivec2_t* const)dynamic_array_get(&snake->array_body, i);
+            vector2i_t* const current_body_position = (vector2i_t* const)dynamic_array_get(&snake->array_body, i);
 
             if (i == 0) {
                 snake->previous_position_tail = *current_body_position;
                 *current_body_position = snake->previous_position_head;
             } else {
-                ivec2_t saved_position = snake->previous_position_tail;
+                vector2i_t saved_position = snake->previous_position_tail;
                 snake->previous_position_tail = *current_body_position;
 
                 *current_body_position = saved_position;
@@ -226,8 +226,8 @@ bool test_body_collision(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->array_body.size; ++i) {
-        const ivec2_t* const body_segment = (const ivec2_t* const)dynamic_array_get(&snake->array_body, i);
-        if (ivec2_equals(&snake->position_head, body_segment) == true) {
+        const vector2i_t* const body_segment = (const vector2i_t* const)dynamic_array_get(&snake->array_body, i);
+        if (vector2i_equals(&snake->position_head, body_segment) == true) {
             return true;
         }
     }
@@ -239,14 +239,14 @@ static bool test_food_collision(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->array_food.size; ++i) {
-        const ivec2_t* const food_position = (const ivec2_t* const)dynamic_array_get(&snake->array_food, i);
+        const vector2i_t* const food_position = (const vector2i_t* const)dynamic_array_get(&snake->array_food, i);
 
         // Food hit.
-        if (ivec2_equals(&snake->position_head, food_position) == true) {
+        if (vector2i_equals(&snake->position_head, food_position) == true) {
             dynamic_array_remove(&snake->array_food, i);
 
             // Add the new array_food to the map.
-            const ivec2_t new_food_position = get_random_empty_position(snake);
+            const vector2i_t new_food_position = get_random_empty_position(snake);
             dynamic_array_append(&snake->array_food, &new_food_position);
             cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
 
@@ -274,7 +274,7 @@ void snake_update_fixed(snake_t* snake) {
 
     // Grow the snake if it hits array_food.
     if (test_food_collision(snake) == true) {
-        ivec2_t new_segment_position;
+        vector2i_t new_segment_position;
         if (dynamic_array_is_empty(&snake->array_body) == true) {
             new_segment_position = snake->previous_position_head;
         } else {
@@ -344,10 +344,10 @@ void snake_render(snake_t* snake) {
         }
     }
 
-    ivec2_t screen_size;
+    vector2i_t screen_size;
     SDL_GetCurrentRenderOutputSize(snake->app.sdl_renderer, &screen_size.x, &screen_size.y);
 
-    ivec2_t text_size;
+    vector2i_t text_size;
     TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y);
 
     // Render the score text at the top center of the screen.
