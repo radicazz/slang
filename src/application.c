@@ -1,6 +1,6 @@
-#include "app.h"
+#include "application.h"
 
-static bool app_create_text(app_t* app) {
+static bool text_create(application_t* app) {
     SDL_assert(app != NULL);
 
     if (TTF_Init() == false) {
@@ -20,7 +20,7 @@ static bool app_create_text(app_t* app) {
     return true;
 }
 
-static void app_destroy_text(app_t* app) {
+static void text_destroy(application_t* app) {
     SDL_assert(app != NULL);
 
     if (app->ttf_font_default != NULL) {
@@ -34,7 +34,7 @@ static void app_destroy_text(app_t* app) {
     TTF_Quit();
 }
 
-bool app_create(app_t* app, const char* title, int width, int height) {
+bool application_create(application_t* app, const char* title, int width, int height) {
     SDL_assert(app != NULL);
     SDL_assert(title != NULL);
     SDL_assert(width > 0);
@@ -55,17 +55,17 @@ bool app_create(app_t* app, const char* title, int width, int height) {
     app->time.frame_delta = 0;
     app->time.accumulator = 0;
 
-    if (app_create_text(app) == false) {
+    if (text_create(app) == false) {
         return false;
     }
 
     return app->is_running = true;
 }
 
-void app_destroy(app_t* app) {
+void application_destroy(application_t* app) {
     SDL_assert(app != NULL);
 
-    app_destroy_text(app);
+    text_destroy(app);
 
     app->time.frame_first = 0;
     app->time.frame_last = 0;
@@ -83,7 +83,7 @@ void app_destroy(app_t* app) {
     }
 }
 
-bool app_should_update_fixed(app_t* app, const Uint64 tick_interval) {
+bool application_should_update_fixed(application_t* app, const Uint64 tick_interval) {
     SDL_assert(app != NULL);
     SDL_assert(tick_interval > 0);
 

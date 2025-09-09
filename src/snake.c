@@ -8,7 +8,7 @@
 // in the while loop.
 //
 // TODO: add a check for the amount of available positions on the board.
-static ivec2_t snake_get_random_empty_position(snake_t* snake) {
+static ivec2_t get_random_empty_position(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     ivec2_t position;
@@ -23,14 +23,14 @@ static ivec2_t snake_get_random_empty_position(snake_t* snake) {
     return position;
 }
 
-static void snake_cell_set_color(snake_t* snake, const ivec2_t* position, snake_colors_t color) {
+static void cell_set_color(snake_t* snake, const ivec2_t* position, snake_colors_t color) {
     SDL_assert(snake != NULL);
     SDL_assert(position != NULL);
 
     snake->cells[position->x][position->y].color = color;
 }
 
-static void snake_reset(snake_t* snake) {
+static void reset(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     dynamic_array_destroy(&snake->array_food);
@@ -52,17 +52,17 @@ static void snake_reset(snake_t* snake) {
         }
     }
 
-    snake->position_head = snake_get_random_empty_position(snake);
-    snake_cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
+    snake->position_head = get_random_empty_position(snake);
+    cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
     snake->previous_position_head = snake->position_head;
     snake->previous_position_tail = snake->position_head;
     snake->current_direction = SNAKE_DIRECTION_UP;
 
     dynamic_array_create(&snake->array_food, sizeof(ivec2_t), 8);
     for (int i = 0; i < snake->array_food.capacity; ++i) {
-        const ivec2_t food_position = snake_get_random_empty_position(snake);
+        const ivec2_t food_position = get_random_empty_position(snake);
         dynamic_array_append(&snake->array_food, &food_position);
-        snake_cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
+        cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
     }
 
     dynamic_array_create(&snake->array_body, sizeof(ivec2_t), 8);
@@ -75,7 +75,7 @@ bool snake_create(snake_t* snake, const char* title) {
     SDL_assert(snake != NULL);
     SDL_assert(title != NULL);
 
-    if (app_create(&snake->app, title, APP_WINDOW_WIDTH, APP_WINDOW_HEIGHT) == false) {
+    if (application_create(&snake->app, title, APP_WINDOW_WIDTH, APP_WINDOW_HEIGHT) == false) {
         return false;
     }
 
@@ -93,7 +93,7 @@ bool snake_create(snake_t* snake, const char* title) {
         return false;
     }
 
-    snake_reset(snake);
+    reset(snake);
 
     return snake->app.is_running;
 }
@@ -101,7 +101,7 @@ bool snake_create(snake_t* snake, const char* title) {
 void snake_destroy(snake_t* snake) {
     SDL_assert(snake != NULL);
 
-    app_destroy(&snake->app);
+    application_destroy(&snake->app);
 
     ivec2_set(&snake->position_head, 0, 0);
     ivec2_set(&snake->previous_position_head, 0, 0);
@@ -113,7 +113,7 @@ void snake_destroy(snake_t* snake) {
     dynamic_array_destroy(&snake->array_body);
 }
 
-static void snake_handle_movement_keys(snake_t* snake, SDL_Scancode scancode) {
+static void handle_movement_keys(snake_t* snake, SDL_Scancode scancode) {
     SDL_assert(snake != NULL);
 
     if (snake->is_paused == true) {
@@ -151,7 +151,7 @@ static void snake_handle_movement_keys(snake_t* snake, SDL_Scancode scancode) {
     }
 }
 
-static void snake_move_head_and_body(snake_t* snake) {
+static void move_head_and_body(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     // Save the previous head position.
@@ -194,11 +194,11 @@ static void snake_move_head_and_body(snake_t* snake) {
 
     // Move the snake's head.
     snake->position_head = new_head_position;
-    snake_cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
+    cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
 
     if (dynamic_array_is_empty(&snake->array_body) == true) {
         // Snake has no array_body, so clear the previous head position.
-        snake_cell_set_color(snake, &snake->previous_position_head, SNAKE_COLOR_BLACK);
+        cell_set_color(snake, &snake->previous_position_head, SNAKE_COLOR_BLACK);
     } else {
         ivec2_set(&snake->previous_position_tail, 0, 0);
 
@@ -216,13 +216,13 @@ static void snake_move_head_and_body(snake_t* snake) {
                 *current_body_position = saved_position;
             }
 
-            snake_cell_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
-            snake_cell_set_color(snake, &snake->previous_position_tail, SNAKE_COLOR_BLACK);
+            cell_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
+            cell_set_color(snake, &snake->previous_position_tail, SNAKE_COLOR_BLACK);
         }
     }
 }
 
-bool snake_test_body_collision(snake_t* snake) {
+bool test_body_collision(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->array_body.size; ++i) {
@@ -235,7 +235,7 @@ bool snake_test_body_collision(snake_t* snake) {
     return false;
 }
 
-static bool snake_test_food_collision(snake_t* snake) {
+static bool test_food_collision(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     for (size_t i = 0; i < snake->array_food.size; ++i) {
@@ -246,9 +246,9 @@ static bool snake_test_food_collision(snake_t* snake) {
             dynamic_array_remove(&snake->array_food, i);
 
             // Add the new array_food to the map.
-            const ivec2_t new_food_position = snake_get_random_empty_position(snake);
+            const ivec2_t new_food_position = get_random_empty_position(snake);
             dynamic_array_append(&snake->array_food, &new_food_position);
-            snake_cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
+            cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
 
             return true;
         }
@@ -264,16 +264,16 @@ void snake_update_fixed(snake_t* snake) {
         return;
     }
 
-    snake_move_head_and_body(snake);
+    move_head_and_body(snake);
 
-    if (snake_test_body_collision(snake) == true) {
+    if (test_body_collision(snake) == true) {
         // Restart the game if the snake collides with its own array_body.
-        snake_reset(snake);
+        reset(snake);
         return;
     }
 
     // Grow the snake if it hits array_food.
-    if (snake_test_food_collision(snake) == true) {
+    if (test_food_collision(snake) == true) {
         ivec2_t new_segment_position;
         if (dynamic_array_is_empty(&snake->array_body) == true) {
             new_segment_position = snake->previous_position_head;
@@ -302,7 +302,7 @@ void snake_handle_events(snake_t* snake) {
                 snake->is_paused = !snake->is_paused;
             }
 
-            snake_handle_movement_keys(snake, event.key.scancode);
+            handle_movement_keys(snake, event.key.scancode);
         }
     }
 }

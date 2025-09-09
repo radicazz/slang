@@ -1,7 +1,7 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include "app.h"
+#include "application.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
@@ -30,7 +30,7 @@ typedef struct {
 } snake_cell_t;
 
 typedef struct {
-    app_t app;
+    application_t app;
 
     bool is_paused;
 

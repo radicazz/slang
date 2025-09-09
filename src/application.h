@@ -22,7 +22,7 @@ typedef struct {
 } app_timing_t;
 
 /**
- * @brief Represents the window state.
+ * @brief Represents the application state.
  */
 typedef struct {
     SDL_Window* sdl_window;
@@ -34,10 +34,10 @@ typedef struct {
     app_timing_t time;
 
     bool is_running;
-} app_t;
+} application_t;
 
-bool app_create(app_t* app, const char* title, int width, int height);
-void app_destroy(app_t* app);
+bool application_create(application_t* app, const char* title, int width, int height);
+void application_destroy(application_t* app);
 
 /**
  * @brief Determines if it's time for a fixed update based on the tick interval.
@@ -50,6 +50,6 @@ void app_destroy(app_t* app);
  * @param tick_interval The desired fixed interval between ticks in milliseconds.
  * @return true if it's time for an update, false otherwise.
  */
-bool app_should_update_fixed(app_t* app, Uint64 tick_interval);
+bool application_should_update_fixed(application_t* app, Uint64 tick_interval);
 
 #endif  // APP_H

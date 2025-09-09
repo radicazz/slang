@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 
     while (snake.app.is_running == true) {
         snake_handle_events(&snake);
-        if (app_should_update_fixed(&snake.app, APP_TICK_INTERVAL) == true) {
+        if (application_should_update_fixed(&snake.app, APP_TICK_INTERVAL) == true) {
             snake_update_fixed(&snake);
         }
 
