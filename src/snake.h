@@ -1,7 +1,7 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include "window.h"
+#include "helpers/window.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
