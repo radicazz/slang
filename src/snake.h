@@ -1,14 +1,14 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include "application.h"
+#include "window.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
 #define SNAKE_CELL_SIZE 10
 
-#define SNAKE_GRID_X (APP_WINDOW_WIDTH / SNAKE_CELL_SIZE)
-#define SNAKE_GRID_Y (APP_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
+#define SNAKE_GRID_X (WINDOW_WIDTH / SNAKE_CELL_SIZE)
+#define SNAKE_GRID_Y (WINDOW_HEIGHT / SNAKE_CELL_SIZE)
 
 typedef enum {
     SNAKE_DIRECTION_UP,
@@ -30,7 +30,7 @@ typedef struct {
 } snake_cell_t;
 
 typedef struct {
-    application_t app;
+    window_t window;
 
     bool is_paused;
 
@@ -54,6 +54,6 @@ void snake_destroy(snake_t* snake);
 
 void snake_handle_events(snake_t* snake);
 void snake_update_fixed(snake_t* snake);
-void snake_render(snake_t* snake);
+void snake_render_frame(snake_t* snake);
 
 #endif  // SNAKE_H

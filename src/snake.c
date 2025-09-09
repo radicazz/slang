@@ -75,7 +75,7 @@ bool snake_create(snake_t* snake, const char* title) {
     SDL_assert(snake != NULL);
     SDL_assert(title != NULL);
 
-    if (application_create(&snake->app, title, APP_WINDOW_WIDTH, APP_WINDOW_HEIGHT) == false) {
+    if (window_create(&snake->window, title, WINDOW_WIDTH, WINDOW_HEIGHT) == false) {
         return false;
     }
 
@@ -83,7 +83,7 @@ bool snake_create(snake_t* snake, const char* title) {
     dynamic_array_init(&snake->array_body);
 
     sprintf(snake->text_score_buffer, "Score: %zu", snake->array_body.size);
-    snake->text_score = TTF_CreateText(snake->app.ttf_text_engine, snake->app.ttf_font_default,
+    snake->text_score = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
                                        snake->text_score_buffer, strlen(snake->text_score_buffer));
     if (snake->text_score == NULL) {
         return false;
@@ -95,13 +95,13 @@ bool snake_create(snake_t* snake, const char* title) {
 
     reset(snake);
 
-    return snake->app.is_running;
+    return snake->window.is_running;
 }
 
 void snake_destroy(snake_t* snake) {
     SDL_assert(snake != NULL);
 
-    application_destroy(&snake->app);
+    window_destroy(&snake->window);
 
     vector2i_set(&snake->position_head, 0, 0);
     vector2i_set(&snake->previous_position_head, 0, 0);
@@ -294,7 +294,7 @@ void snake_handle_events(snake_t* snake) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) {
-            snake->app.is_running = false;
+            snake->window.is_running = false;
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
@@ -307,12 +307,12 @@ void snake_handle_events(snake_t* snake) {
     }
 }
 
-void snake_render(snake_t* snake) {
+void snake_render_frame(snake_t* snake) {
     SDL_assert(snake != NULL);
-    SDL_assert(snake->app.sdl_window != NULL);
-    SDL_assert(snake->app.sdl_renderer != NULL);
+    SDL_assert(snake->window.sdl_window != NULL);
+    SDL_assert(snake->window.sdl_renderer != NULL);
 
-    SDL_RenderClear(snake->app.sdl_renderer);
+    SDL_RenderClear(snake->window.sdl_renderer);
 
     // Loop through all the cells and render them based on their color.
     for (int x = 0; x < SNAKE_GRID_X; ++x) {
@@ -322,16 +322,16 @@ void snake_render(snake_t* snake) {
             // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
             switch (cell->color) {
                 case SNAKE_COLOR_BLACK:
-                    SDL_SetRenderDrawColor(snake->app.sdl_renderer, 0, 0, 0, 255);
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 0, 0, 255);
                     break;
                 case SNAKE_COLOR_GRAY:
-                    SDL_SetRenderDrawColor(snake->app.sdl_renderer, 50, 50, 50, 255);
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 50, 50, 50, 255);
                     break;
                 case SNAKE_COLOR_GREEN:
-                    SDL_SetRenderDrawColor(snake->app.sdl_renderer, 0, 255, 0, 255);
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 255, 0, 255);
                     break;
                 case SNAKE_COLOR_RED:
-                    SDL_SetRenderDrawColor(snake->app.sdl_renderer, 255, 0, 0, 255);
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 255, 0, 0, 255);
                     break;
             }
 
@@ -340,12 +340,12 @@ void snake_render(snake_t* snake) {
             rect.y = (float)(cell->position.y * SNAKE_CELL_SIZE);
             rect.w = rect.h = (float)SNAKE_CELL_SIZE;
 
-            SDL_RenderFillRect(snake->app.sdl_renderer, &rect);
+            SDL_RenderFillRect(snake->window.sdl_renderer, &rect);
         }
     }
 
     vector2i_t screen_size;
-    SDL_GetCurrentRenderOutputSize(snake->app.sdl_renderer, &screen_size.x, &screen_size.y);
+    SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y);
 
     vector2i_t text_size;
     TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y);
@@ -353,5 +353,5 @@ void snake_render(snake_t* snake) {
     // Render the score text at the top center of the screen.
     TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f);
 
-    SDL_RenderPresent(snake->app.sdl_renderer);
+    SDL_RenderPresent(snake->window.sdl_renderer);
 }
