@@ -2,7 +2,8 @@
 #define SNAKE_H
 
 #include "app.h"
-#include "utils.h"
+#include "utils/vector.h"
+#include "utils/dynamic_array.h"
 
 #define SNAKE_CELL_SIZE 10
 

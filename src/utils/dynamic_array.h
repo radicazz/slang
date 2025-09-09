@@ -1,29 +1,9 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef DYNAMIC_ARRAY_H
+#define DYNAMIC_ARRAY_H
 
 #include <stdbool.h>
 #include <stddef.h>
 
-/**
- * @brief 2D integer vector structure.
- */
-typedef struct {
-    int x;
-    int y;
-} ivec2_t;
-
-void ivec2_set(ivec2_t* vec, int x, int y);
-
-void ivec2_add(const ivec2_t* a, const ivec2_t* b, ivec2_t* result);
-void ivec2_subtract(const ivec2_t* a, const ivec2_t* b, ivec2_t* result);
-
-bool ivec2_equals(const ivec2_t* a, const ivec2_t* b);
-
-void ivec2_random(ivec2_t* vec, int max_x, int max_y);
-
-/**
- * @brief Contiguous array structure that can dynamically grow.
- */
 typedef struct {
     void* data;
     size_t data_size;
@@ -44,4 +24,4 @@ void dynamic_array_set(dynamic_array_t* array, size_t index, const void* data);
 
 bool dynamic_array_is_empty(const dynamic_array_t* array);
 
-#endif  // UTILS_H
+#endif  // DYNAMIC_ARRAY_H

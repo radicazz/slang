@@ -12,7 +12,7 @@ add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_image EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
 
-file(GLOB SLANG_SOURCES "src/*.c")
+file(GLOB_RECURSE SLANG_SOURCES "src/*.c")
 
 add_executable(slang WIN32 ${SLANG_SOURCES})
 
@@ -23,11 +23,11 @@ target_link_libraries(slang PRIVATE SDL3::SDL3 PRIVATE SDL3_image::SDL3_image PR
 add_custom_command(
     TARGET slang POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets"
-        "$<TARGET_FILE_DIR:slang>/assets"
+    "${CMAKE_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:slang>/assets"
 )
 
-if (WIN32)
+if(WIN32)
     add_custom_command(
         TARGET slang POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy $<TARGET_FILE:SDL3::SDL3-shared> $<TARGET_FILE_DIR:slang>
