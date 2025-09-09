@@ -48,18 +48,18 @@ bool app_create(app_t* app, const char* title, int width, int height) {
 
     if (SDL_CreateWindowAndRenderer(title, width, height, 0, &app->sdl_window, &app->sdl_renderer) == false) {
         return false;
-    }
+    };
 
-    app->is_running = true;
-
-    app->last_tick_time = SDL_GetTicks();
-    app->tick_accumulator = 0;
+    app->time.frame_first = SDL_GetTicks();
+    app->time.frame_last = app->time.frame_first;
+    app->time.frame_delta = 0;
+    app->time.accumulator = 0;
 
     if (app_create_text(app) == false) {
         return false;
     }
 
-    return true;
+    return app->is_running = true;
 }
 
 void app_destroy(app_t* app) {
@@ -67,8 +67,10 @@ void app_destroy(app_t* app) {
 
     app_destroy_text(app);
 
-    app->last_tick_time = 0;
-    app->tick_accumulator = 0;
+    app->time.frame_first = 0;
+    app->time.frame_last = 0;
+    app->time.frame_delta = 0;
+    app->time.accumulator = 0;
 
     if (app->sdl_renderer != NULL) {
         SDL_DestroyRenderer(app->sdl_renderer);
@@ -81,17 +83,17 @@ void app_destroy(app_t* app) {
     }
 }
 
-bool app_process_time(app_t* app, uint64_t tick_interval) {
+bool app_should_update_fixed(app_t* app, const Uint64 tick_interval) {
     SDL_assert(app != NULL);
+    SDL_assert(tick_interval > 0);
 
-    uint64_t current_time = SDL_GetTicks();
-    uint64_t elapsed_time = current_time - app->last_tick_time;
-    app->last_tick_time = current_time;
+    const Uint64 time_current = SDL_GetTicks();
+    app->time.frame_delta = time_current - app->time.frame_last;
+    app->time.frame_last = time_current;
 
-    app->tick_accumulator += elapsed_time;
-
-    if (app->tick_accumulator >= tick_interval) {
-        app->tick_accumulator -= tick_interval;
+    app->time.accumulator += app->time.frame_delta;
+    if (app->time.accumulator >= tick_interval) {
+        app->time.accumulator -= tick_interval;
         return true;
     }
 

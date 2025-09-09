@@ -253,7 +253,7 @@ static bool snake_test_food_collision(snake_t* snake) {
     return false;
 }
 
-void snake_update(snake_t* snake) {
+void snake_update_fixed(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     snake_move_head_and_body(snake);

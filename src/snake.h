@@ -9,11 +9,6 @@
 #define SNAKE_GRID_X (APP_WINDOW_WIDTH / SNAKE_CELL_SIZE)
 #define SNAKE_GRID_Y (APP_WINDOW_HEIGHT / SNAKE_CELL_SIZE)
 
-// This is currently used to control the framerate, not the tickrate.
-// TODO: Implement proper tickrate control separate from framerate.
-#define SNAKE_TICK_RATE 10
-#define SNAKE_TICK_INTERVAL (1000 / SNAKE_TICK_RATE)
-
 typedef enum {
     SNAKE_DIRECTION_UP,
     SNAKE_DIRECTION_DOWN,
@@ -56,8 +51,7 @@ bool snake_create(snake_t* snake, const char* title);
 void snake_destroy(snake_t* snake);
 
 void snake_handle_events(snake_t* snake);
-
-void snake_update(snake_t* snake);
+void snake_update_fixed(snake_t* snake);
 void snake_render(snake_t* snake);
 
 #endif  // SNAKE_H
