@@ -1,18 +1,22 @@
-# 🐍 Slang
+# 🐍 slang
 
-[![GitHub license](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/master/LICENSE.txt)
-[![GitHub last commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/master)
 [![C](https://img.shields.io/badge/C-99-blue.svg)](https://en.cppreference.com/w/c.html)
-[![CMake](https://img.shields.io/badge/CMake-3.16+-blue.svg)](https://cmake.org/)
-[![SDL](https://img.shields.io/badge/SDL-3.0+-blue.svg)](https://www.libsdl.org/)
+[![CMake](https://img.shields.io/badge/CMake-3.16-blue.svg)](https://cmake.org/)
+[![SDL](https://img.shields.io/badge/SDL-3-blue.svg)](https://www.libsdl.org/)
+[![License](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/master/LICENSE.txt)
+[![Last Commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/master)
 
-A modern implementation of the classic *snake* game made with C99 & SDL3 for fun.
+My take on the classic snake game, built using C99, CMake and SDL3.
 
 ## Gameplay
 
-Navigate the snake with WASD or Arrow keys to eat apples, grow longer, and avoid collisions to achieve the highest score!
+[Here's an example of the game...](https://i.imgur.com/tTzlKck.gif)
 
-![Gameplay Screenshot](https://i.imgur.com/tTzlKck.gif)
+- Use `arrows` or `WASD` to control the snake.
+- Eat the red apples to grow longer and score points.
+- Avoid running into yourself, or it's game over!
+- Walls will wrap around to the other side of the screen.
+- Use `esc` to pause and unpause the game.
 
 ## Requirements
 
@@ -22,33 +26,25 @@ Navigate the snake with WASD or Arrow keys to eat apples, grow longer, and avoid
 - [CMake](https://cmake.org/) (version 3.16 or higher)
 - [SDL3](https://www.libsdl.org/) (automatically handled via submodules)
 
-## Installation & Usage
+## Building
 
-1. Clone the repository with submodules:
+Start off by cloning the repository with its submodules:
 
-    ```bash
-    git clone --recurse-submodules https://github.com/radicazz/slang.git
-    cd slang
-    ```
+```bash
+# Clone the repository with submodules
+git clone --recurse-submodules https://github.com/radicazz/slang.git
+cd slang
+```
 
-2. Configure & build the project:
+Then, configure and build the project using CMake:
 
-    ```bash
-    cmake -S . -B build
-    cmake --build build
-    ```
+```bash
+# Configure & build the project
+cmake -S . -B build
+cmake --build build
+```
 
-3. Run the game:
-
-    ```bash
-    # On Linux/macOS
-    ./build/slang
-    ```
-
-    ```bash
-    # On Windows
-    .\build\Debug\slang.exe
-    ```
+The compiled executable will be located in the `build` directory.
 
 ## License
 
