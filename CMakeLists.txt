@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(slang C)
 
+enable_testing()
+
 # Don't allow in-source builds.
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     message(FATAL_ERROR "In-source builds are not allowed. Please create a separate build directory.")
@@ -17,6 +19,15 @@ add_executable(slang WIN32 ${SLANG_SOURCES})
 
 target_compile_features(slang PRIVATE c_std_99)
 target_link_libraries(slang PRIVATE SDL3::SDL3 PRIVATE SDL3_ttf::SDL3_ttf)
+
+add_executable(dynamic_array_tests
+    tests/dynamic_array_tests.c
+    src/utils/dynamic_array.c
+)
+
+target_include_directories(dynamic_array_tests PRIVATE src)
+target_compile_features(dynamic_array_tests PRIVATE c_std_99)
+add_test(NAME dynamic_array_tests COMMAND dynamic_array_tests)
 
 # Copy assets folder over to build directory for game assets.
 add_custom_command(
