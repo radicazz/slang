@@ -51,7 +51,8 @@ void dynamic_array_destroy(dynamic_array_t* array) {
  */
 static void dynamic_array_resize(dynamic_array_t* array, size_t new_capacity) {
     assert(array != NULL);
-    assert(new_capacity > array->capacity);
+    assert(new_capacity > 0);
+    assert(new_capacity >= array->size);
 
     void* new_data = realloc(array->data, array->data_size * new_capacity);
     assert(new_data != NULL);
@@ -85,7 +86,7 @@ void dynamic_array_remove(dynamic_array_t* array, size_t index) {
 
     array->size--;
 
-    if (array->size < array->capacity / 4) {
+    if (array->size > 0 && array->size < array->capacity / 4) {
         dynamic_array_resize(array, array->capacity / 2);
     }
 }
