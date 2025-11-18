@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 // NOTE: This function will eventually break the game at the late stages
 // when there are no more empty positions available as it will get stuck
@@ -32,6 +33,8 @@ static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_col
 
 static void reset(snake_t* snake) {
     SDL_assert(snake != NULL);
+
+    snake->is_paused = false;
 
     dynamic_array_destroy(&snake->array_food);
     dynamic_array_destroy(&snake->array_body);
@@ -74,6 +77,8 @@ static void reset(snake_t* snake) {
 bool snake_create(snake_t* snake, const char* title) {
     SDL_assert(snake != NULL);
     SDL_assert(title != NULL);
+
+    memset(snake, 0, sizeof(*snake));
 
     if (window_create(&snake->window, title, WINDOW_WIDTH, WINDOW_HEIGHT) == false) {
         return false;
