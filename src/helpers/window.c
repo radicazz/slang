@@ -1,4 +1,5 @@
 #include "window.h"
+#include "SDL3/SDL_init.h"
 
 static bool text_create(window_t* window) {
     SDL_assert(window != NULL);
@@ -46,6 +47,10 @@ bool window_create(window_t* window, const char* title, int width, int height) {
     window->ttf_text_engine = NULL;
     window->ttf_font_default = NULL;
 
+    if (SDL_Init(SDL_INIT_VIDEO) == false) {
+        return false;
+    }
+
     if (SDL_CreateWindowAndRenderer(title, width, height, 0, &window->sdl_window, &window->sdl_renderer) == false) {
         return false;
     };
@@ -81,6 +86,8 @@ void window_destroy(window_t* window) {
         SDL_DestroyWindow(window->sdl_window);
         window->sdl_window = NULL;
     }
+
+    SDL_Quit();
 }
 
 bool window_can_update_fixed(window_t* window, const Uint64 tick_interval) {
