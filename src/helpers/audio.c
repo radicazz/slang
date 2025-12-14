@@ -127,6 +127,16 @@ bool audio_manager_play_sound(audio_manager_t* manager, sound_id_t id) {
         return false;
     }
 
-    // TODO: Implement sound playback
-    return false;
+    if (manager->sounds[id].buffer == NULL) {
+        SDL_Log("Sound not loaded for ID %d, cannot play", id);
+        return false;
+    }
+
+    if (SDL_PutAudioStreamData(manager->stream, manager->sounds[id].buffer, (int)manager->sounds[id].length) ==
+        false) {
+        SDL_Log("Failed to queue audio data for playback: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
 }
