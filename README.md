@@ -1,8 +1,8 @@
 # 🐍 slang
 
-[![tests](https://github.com/radicazz/slang/actions/workflows/tests.yml/badge.svg)](https://github.com/radicazz/slang/actions/workflows/tests.yml)
-[![License](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/master/LICENSE.txt)
-[![Last Commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/master)
+[![tests](https://github.com/radicazz/slang/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/radicazz/slang/actions/workflows/tests.yml)
+[![License](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/main/LICENSE.txt)
+[![Last Commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/main)
 
 My take on the classic snake game, built using C99, CMake and SDL3.
 
