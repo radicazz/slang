@@ -1,0 +1,173 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules + full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Generate release notes (since previous tag)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          sha="${GITHUB_SHA}"
+
+          git fetch --tags --force --prune
+
+          prev_tag=""
+          if git describe --tags --abbrev=0 --match "v*" "${sha}^" >/dev/null 2>&1; then
+            prev_tag="$(git describe --tags --abbrev=0 --match "v*" "${sha}^")"
+          fi
+
+          {
+            echo "# ${tag}"
+            echo
+            echo "- Commit: \`${sha}\`"
+            echo
+            if [ -n "${prev_tag}" ]; then
+              echo "## Changelog"
+              echo
+              echo "Changes since \`${prev_tag}\`:"
+              echo
+              if [ "$(git rev-list --count "${prev_tag}..${sha}")" = "0" ]; then
+                echo "- No commits."
+              else
+                git log --reverse --pretty=format:'- %s (%h)' "${prev_tag}..${sha}"
+              fi
+              echo
+            else
+              echo "## Changelog"
+              echo
+              echo "First release (no previous \`v*\` tags found)."
+              echo
+              git log --reverse --pretty=format:'- %s (%h)' "${sha}"
+              echo
+            fi
+          } > release-notes.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
+  build:
+    name: build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-13
+            platform: macos
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config gcc g++ \
+            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols \
+            libegl1-mesa-dev libgl1-mesa-dev \
+            libfreetype6-dev
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure (Ninja, Release)
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (slang)
+        run: cmake --build build --target slang
+
+      - name: Package (executable + assets)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          platform="${{ matrix.platform }}"
+          package_dir="slang-${tag}-${platform}-x64"
+
+          exe="slang"
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            exe="slang.exe"
+          fi
+
+          rm -rf "${package_dir}"
+          mkdir -p "${package_dir}"
+
+          if [ ! -f "build/${exe}" ]; then
+            echo "Expected executable not found: build/${exe}"
+            ls -la build
+            exit 1
+          fi
+
+          cmake -E copy "build/${exe}" "${package_dir}/${exe}"
+
+          if [ -d "build/assets" ]; then
+            cmake -E copy_directory "build/assets" "${package_dir}/assets"
+          else
+            echo "Expected assets directory not found: build/assets"
+            ls -la build
+            exit 1
+          fi
+
+          shopt -s nullglob
+          for f in build/*.dll build/*.so* build/*.dylib; do
+            cmake -E copy "$f" "${package_dir}/"
+          done
+
+          out="slang-${tag}-${platform}-x64.zip"
+          cmake -E tar cfv "${out}" --format=zip "${package_dir}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: slang-${{ github.ref_name }}-${{ matrix.platform }}-x64
+          path: slang-${{ github.ref_name }}-${{ matrix.platform }}-x64.zip
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [release-notes, build]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: artifacts/release-notes/release-notes.md
+          files: artifacts/**/*.zip
