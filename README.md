@@ -1,26 +1,27 @@
 # 🐍 slang
 
+[![Release](https://img.shields.io/github/v/release/radicazz/slang?include_prereleases&color=blue)](https://github.com/radicazz/slang/releases)
 [![tests](https://github.com/radicazz/slang/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/radicazz/slang/actions/workflows/tests.yml)
-[![License](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/main/LICENSE.txt)
-[![Last Commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/main)
+[![License](https://img.shields.io/github/license/radicazz/slang?color=yellow)](https://github.com/radicazz/slang/blob/main/LICENSE.txt)
+
+My take on the classic snake game, built using C99, CMake and SDL3.
 
 <!-- markdownlint-disable MD033 -->
-<div style="display: flex; align-items: flex-start;">
-    <img src="data/example-screenshot.png" alt="Screenshot of slang game showing a snake made of green segments on a dark background with a red apple" width="300px" style="margin-right: 20px;">
-    <div>
-        <h2>About</h2>
-        <p>My take on the classic snake game, built using C99, CMake and SDL3.</p>
-        <h3>Gameplay</h3>
-        <ul>
-            <li>Use <code>arrows</code> or <code>WASD</code> to control the snake.</li>
-            <li>Eat the red apples to grow longer and score points.</li>
-            <li>Avoid running into yourself, or it's game over!</li>
-            <li>Walls will wrap around to the other side of the screen.</li>
-            <li>Use <code>esc</code> to pause and unpause the game.</li>
-        </ul>
-    </div>
-</div>
+<details>
+<summary>Screenshot</summary>
+
+![Screenshot of slang game showing a snake made of green segments on a dark background with a red apple](data/example-screenshot.png)
+
+</details>
 <!-- markdownlint-enable MD033 -->
+
+## Controls
+
+- Use `arrows` or `wasd` to control the snake.
+- Eat the red apples to grow longer and score points.
+- Avoid running into yourself, or it's game over!
+- Walls will wrap around to the other side of the screen.
+- Use `esc` to pause and unpause the game.
 
 ## Building
 
