@@ -74,9 +74,45 @@ bool audio_manager_load_sound(audio_manager_t* manager, sound_id_t id, const cha
         return false;
     }
 
-    // TODO: Implement sound loading
-    SDL_Log("Sound loading not yet implemented: %s", filepath);
-    return false;
+    if (manager->sounds[id].buffer != NULL) {
+        SDL_Log("Sound already loaded for ID %d, skipping: %s", id, filepath);
+        return true;
+    }
+
+    SDL_AudioSpec spec;
+    uint8_t* buffer = NULL;
+    Uint32 length = 0;
+
+    if (SDL_LoadWAV(filepath, &spec, &buffer, &length) == false) {
+        SDL_Log("Failed to load audio file '%s': %s", filepath, SDL_GetError());
+        return false;
+    }
+
+    SDL_AudioSpec target_spec;
+    if (SDL_GetAudioStreamFormat(manager->stream, &target_spec, NULL) == false) {
+        SDL_Log("Failed to get audio stream format: %s", SDL_GetError());
+        SDL_free(buffer);
+        return false;
+    }
+
+    uint8_t* converted_buffer = NULL;
+    int converted_length = 0;
+
+    if (SDL_ConvertAudioSamples(&spec, buffer, (int)length, &target_spec, &converted_buffer, &converted_length) ==
+        false) {
+        SDL_Log("Failed to convert audio samples for '%s': %s", filepath, SDL_GetError());
+        SDL_free(buffer);
+        return false;
+    }
+
+    SDL_free(buffer);
+
+    manager->sounds[id].buffer = converted_buffer;
+    manager->sounds[id].length = (size_t)converted_length;
+    manager->sounds[id].spec = target_spec;
+
+    SDL_Log("Successfully loaded sound: %s (ID: %d, %d bytes)", filepath, id, converted_length);
+    return true;
 }
 
 bool audio_manager_play_sound(audio_manager_t* manager, sound_id_t id) {
