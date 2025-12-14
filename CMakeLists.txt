@@ -29,6 +29,16 @@ target_include_directories(dynamic_array_tests PRIVATE src)
 target_compile_features(dynamic_array_tests PRIVATE c_std_99)
 add_test(NAME dynamic_array_tests COMMAND dynamic_array_tests)
 
+add_executable(vector_tests
+    tests/vector_tests.c
+    src/utils/vector.c
+)
+
+target_include_directories(vector_tests PRIVATE src)
+target_compile_features(vector_tests PRIVATE c_std_99)
+target_link_libraries(vector_tests PRIVATE SDL3::SDL3)
+add_test(NAME vector_tests COMMAND vector_tests)
+
 # Copy assets folder over to build directory for game assets.
 add_custom_command(
     TARGET slang POST_BUILD
