@@ -132,7 +132,7 @@ bool snake_create(snake_t* snake, const char* title) {
     if (audio_manager_create(&snake->audio) == false) {
         SDL_Log("Warning: Failed to initialize audio, continuing without sound");
     } else {
-        if (audio_manager_load_sound(&snake->audio, SOUND_EAT_FOOD, "assets/sounds/bubble-pop.mp3") == false) {
+        if (audio_manager_load_sound(&snake->audio, SOUND_EAT_FOOD, "assets/sounds/bubble-pop.wav") == false) {
             SDL_Log("Warning: Failed to load eating sound effect");
         }
     }
