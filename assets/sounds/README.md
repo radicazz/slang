@@ -2,7 +2,7 @@
 
 ## Attribution
 
-### `bubble-pop.mp3`
+### `bubble-pop.wav`
 
 Trimmed from a Pixabay sound effect.
 
