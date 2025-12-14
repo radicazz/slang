@@ -1,0 +1,37 @@
+# slang: agent notes (not user docs)
+
+## Quick commands
+
+```sh
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+## Repo map
+
+- `src/main.c`: main loop (fixed-timestep update + render).
+- `src/snake.c`, `src/snake.h`: game state, movement, collisions, rendering.
+- `src/helpers/window.c`, `src/helpers/window.h`: SDL window/renderer + SDL_ttf init/teardown + timing.
+- `src/utils/*`: `vector2i_*` + `dynamic_array_*`.
+- `tests/dynamic_array_tests.c`: only unit test target (`dynamic_array_tests`).
+
+## Conventions (follow these)
+
+- C standard: C99 (`c_std_99`).
+- Formatting: `clang-format -i` using `.clang-format` (4 spaces, 120 cols, left-aligned pointers).
+- Error handling: check SDL/TTF return values (`false`/`NULL`), log via `SDL_Log(..., SDL_GetError())`, and fail fast.
+- Lifetimes: `*_destroy()` must be safe after partial init; free resources once, then set pointers to `NULL`.
+- Avoid unbounded loops; random placement must have an upper bound + a deterministic fallback.
+- Prefer `snprintf` over `sprintf`; avoid implicit truncation.
+
+## CMake notes
+
+- Game sources are auto-globbed from `src/*.c`; adding new `.c` files under `src/` usually needs no CMake edit.
+- Dependencies come from git submodules in `external/` (SDL3 + SDL_ttf).
+- Post-build copies `assets/` into the executable directory.
+
+## Don’ts
+
+- Don’t commit build artifacts (`build/`, `CMakeCache.txt`, etc. are gitignored).
+- Don’t add “clever” architecture; keep changes small and consistent with existing patterns.
