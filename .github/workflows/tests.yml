@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config gcc g++ \
+            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols \
+            libegl1-mesa-dev libgl1-mesa-dev \
+            libfreetype6-dev
+
+      - name: Configure (Ninja)
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure

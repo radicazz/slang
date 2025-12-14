@@ -1,8 +1,6 @@
 # 🐍 slang
 
-[![C](https://img.shields.io/badge/C-99-blue.svg)](https://en.cppreference.com/w/c.html)
-[![CMake](https://img.shields.io/badge/CMake-3.16-blue.svg)](https://cmake.org/)
-[![SDL](https://img.shields.io/badge/SDL-3-blue.svg)](https://www.libsdl.org/)
+[![tests](https://github.com/radicazz/slang/actions/workflows/tests.yml/badge.svg)](https://github.com/radicazz/slang/actions/workflows/tests.yml)
 [![License](https://img.shields.io/github/license/radicazz/slang.svg)](https://github.com/radicazz/slang/blob/master/LICENSE.txt)
 [![Last Commit](https://img.shields.io/github/last-commit/radicazz/slang.svg)](https://github.com/radicazz/slang/commits/master)
 
