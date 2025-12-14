@@ -8,7 +8,7 @@ My take on the classic snake game, built using C99, CMake and SDL3.
 
 ## Gameplay
 
-[Here's an example of the game...](https://i.imgur.com/tTzlKck.gif)
+![Example](data/example-screenshot.png)
 
 - Use `arrows` or `WASD` to control the snake.
 - Eat the red apples to grow longer and score points.
