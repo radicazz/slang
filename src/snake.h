@@ -2,6 +2,7 @@
 #define SNAKE_H
 
 #include "helpers/window.h"
+#include "helpers/audio.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
@@ -32,6 +33,7 @@ typedef struct {
 
 typedef struct {
     window_t window;
+    audio_manager_t audio;
 
     bool is_paused;
 
