@@ -129,6 +129,14 @@ bool snake_create(snake_t* snake, const char* title) {
         return false;
     }
 
+    if (audio_manager_create(&snake->audio) == false) {
+        SDL_Log("Warning: Failed to initialize audio, continuing without sound");
+    } else {
+        if (audio_manager_load_sound(&snake->audio, SOUND_EAT_FOOD, "assets/sounds/bubble-pop.wav") == false) {
+            SDL_Log("Warning: Failed to load eating sound effect");
+        }
+    }
+
     Uint64 seed = SDL_GetTicksNS();
     seed ^= SDL_GetPerformanceCounter();
     seed ^= (Uint64)(uintptr_t)snake;
@@ -175,6 +183,7 @@ void snake_destroy(snake_t* snake) {
         snake->text_score = NULL;
     }
 
+    audio_manager_destroy(&snake->audio);
     window_destroy(&snake->window);
 
     vector2i_set(&snake->position_head, 0, 0);
@@ -353,6 +362,8 @@ void snake_update_fixed(snake_t* snake) {
 
     // Grow the snake if it hits array_food.
     if (test_food_collision(snake) == true) {
+        audio_manager_play_sound(&snake->audio, SOUND_EAT_FOOD);
+
         vector2i_t new_segment_position;
         if (dynamic_array_is_empty(&snake->array_body) == true) {
             new_segment_position = snake->previous_position_head;
