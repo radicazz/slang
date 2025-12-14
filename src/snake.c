@@ -362,6 +362,8 @@ void snake_update_fixed(snake_t* snake) {
 
     // Grow the snake if it hits array_food.
     if (test_food_collision(snake) == true) {
+        audio_manager_play_sound(&snake->audio, SOUND_EAT_FOOD);
+
         vector2i_t new_segment_position;
         if (dynamic_array_is_empty(&snake->array_body) == true) {
             new_segment_position = snake->previous_position_head;
