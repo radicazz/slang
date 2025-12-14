@@ -10,8 +10,13 @@ int main(int argc, char* argv[]) {
 
     while (snake.window.is_running == true) {
         snake_handle_events(&snake);
-        if (window_can_update_fixed(&snake.window, WINDOW_TICK_INTERVAL) == true) {
+        while (snake.window.is_running == true &&
+               window_can_update_fixed(&snake.window, WINDOW_TICK_INTERVAL) == true) {
             snake_update_fixed(&snake);
+        }
+
+        if (snake.window.is_running == false) {
+            break;
         }
 
         snake_render_frame(&snake);

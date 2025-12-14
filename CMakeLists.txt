@@ -13,7 +13,7 @@ endif()
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/SDL_ttf EXCLUDE_FROM_ALL)
 
-file(GLOB_RECURSE SLANG_SOURCES "src/*.c")
+file(GLOB_RECURSE SLANG_SOURCES CONFIGURE_DEPENDS "src/*.c")
 
 add_executable(slang WIN32 ${SLANG_SOURCES})
 

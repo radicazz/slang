@@ -19,6 +19,7 @@ typedef struct {
     Uint64 frame_last;
     Uint64 frame_delta;
     Uint64 accumulator;
+    bool frame_accumulated;
 } window_timing_t;
 
 /**

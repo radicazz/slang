@@ -1,27 +1,39 @@
 #include "snake.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <SDL3/SDL_log.h>
 
-// NOTE: This function will eventually break the game at the late stages
-// when there are no more empty positions available as it will get stuck
-// in the while loop.
-//
-// TODO: add a check for the amount of available positions on the board.
-static vector2i_t get_random_empty_position(snake_t* snake) {
+static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) {
     SDL_assert(snake != NULL);
+    SDL_assert(out_position != NULL);
+
+    const int interior_width = SNAKE_GRID_X - 2;
+    const int interior_height = SNAKE_GRID_Y - 2;
+    const int max_attempts = interior_width * interior_height * 2;
 
     vector2i_t position;
-    vector2i_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
-
-    snake_cell_t* cell = &snake->cells[position.x][position.y];
-    while (cell->color != SNAKE_COLOR_BLACK) {
-        vector2i_random(&position, SNAKE_GRID_X - 1, SNAKE_GRID_Y - 1);
-        cell = &snake->cells[position.x][position.y];
+    for (int attempt = 0; attempt < max_attempts; ++attempt) {
+        vector2i_random(&position, interior_width, interior_height);
+        snake_cell_t* cell = &snake->cells[position.x][position.y];
+        if (cell->color == SNAKE_COLOR_BLACK) {
+            *out_position = position;
+            return true;
+        }
     }
 
-    return position;
+    for (int x = 1; x < SNAKE_GRID_X - 1; ++x) {
+        for (int y = 1; y < SNAKE_GRID_Y - 1; ++y) {
+            if (snake->cells[x][y].color == SNAKE_COLOR_BLACK) {
+                vector2i_set(out_position, x, y);
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_colors_t color) {
@@ -31,7 +43,26 @@ static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_col
     snake->cells[position->x][position->y].color = color;
 }
 
-static void reset(snake_t* snake) {
+static bool update_score_text(snake_t* snake) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_score != NULL);
+
+    const int written =
+        snprintf(snake->text_score_buffer, sizeof(snake->text_score_buffer), "Score: %zu", snake->array_body.size);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_score_buffer)) {
+        SDL_Log("Failed to format score text.");
+        return false;
+    }
+
+    if (TTF_SetTextString(snake->text_score, snake->text_score_buffer, (size_t)written) == false) {
+        SDL_Log("Failed to update score text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+static bool reset(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     snake->is_paused = false;
@@ -55,7 +86,12 @@ static void reset(snake_t* snake) {
         }
     }
 
-    snake->position_head = get_random_empty_position(snake);
+    vector2i_t head_position;
+    if (get_random_empty_position(snake, &head_position) == false) {
+        return false;
+    }
+
+    snake->position_head = head_position;
     cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
     snake->previous_position_head = snake->position_head;
     snake->previous_position_tail = snake->position_head;
@@ -63,15 +99,24 @@ static void reset(snake_t* snake) {
 
     dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8);
     for (int i = 0; i < snake->array_food.capacity; ++i) {
-        const vector2i_t food_position = get_random_empty_position(snake);
+        vector2i_t food_position;
+        if (get_random_empty_position(snake, &food_position) == false) {
+            break;
+        }
+
         dynamic_array_append(&snake->array_food, &food_position);
         cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
     }
 
     dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
 
-    sprintf(snake->text_score_buffer, "Score: %zu", snake->array_body.size);
-    TTF_SetTextString(snake->text_score, snake->text_score_buffer, strlen(snake->text_score_buffer));
+    if (update_score_text(snake) == false) {
+        dynamic_array_destroy(&snake->array_food);
+        dynamic_array_destroy(&snake->array_body);
+        return false;
+    }
+
+    return true;
 }
 
 bool snake_create(snake_t* snake, const char* title) {
@@ -84,27 +129,51 @@ bool snake_create(snake_t* snake, const char* title) {
         return false;
     }
 
+    Uint64 seed = SDL_GetTicksNS();
+    seed ^= SDL_GetPerformanceCounter();
+    seed ^= (Uint64)(uintptr_t)snake;
+    if (seed == 0) {
+        seed = SDL_GetPerformanceCounter() | 1u;
+    }
+    SDL_srand(seed);
+
     dynamic_array_init(&snake->array_food);
     dynamic_array_init(&snake->array_body);
 
-    sprintf(snake->text_score_buffer, "Score: %zu", snake->array_body.size);
+    const int written =
+        snprintf(snake->text_score_buffer, sizeof(snake->text_score_buffer), "Score: 0");
+    if (written < 0 || (size_t)written >= sizeof(snake->text_score_buffer)) {
+        goto fail;
+    }
+
     snake->text_score = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
-                                       snake->text_score_buffer, strlen(snake->text_score_buffer));
+                                       snake->text_score_buffer, (size_t)written);
     if (snake->text_score == NULL) {
-        return false;
+        goto fail;
     }
 
     if (TTF_SetTextColor(snake->text_score, 255, 255, 255, 255) == false) {
-        return false;
+        goto fail;
     }
 
-    reset(snake);
+    if (reset(snake) == false) {
+        goto fail;
+    }
 
     return snake->window.is_running;
+
+fail:
+    snake_destroy(snake);
+    return false;
 }
 
 void snake_destroy(snake_t* snake) {
     SDL_assert(snake != NULL);
+
+    if (snake->text_score != NULL) {
+        TTF_DestroyText(snake->text_score);
+        snake->text_score = NULL;
+    }
 
     window_destroy(&snake->window);
 
@@ -152,6 +221,8 @@ static void handle_movement_keys(snake_t* snake, SDL_Scancode scancode) {
             if (snake->current_direction != SNAKE_DIRECTION_LEFT) {
                 snake->current_direction = SNAKE_DIRECTION_RIGHT;
             }
+            break;
+        default:
             break;
     }
 }
@@ -221,7 +292,7 @@ static void move_head_and_body(snake_t* snake) {
                 *current_body_position = saved_position;
             }
 
-            cell_set_color(snake, current_body_position, SNAKE_COLOR_GREEN);
+            cell_set_color(snake, current_body_position, SNAKE_COLOR_DARK_GREEN);
             cell_set_color(snake, &snake->previous_position_tail, SNAKE_COLOR_BLACK);
         }
     }
@@ -250,10 +321,11 @@ static bool test_food_collision(snake_t* snake) {
         if (vector2i_equals(&snake->position_head, food_position) == true) {
             dynamic_array_remove(&snake->array_food, i);
 
-            // Add the new array_food to the map.
-            const vector2i_t new_food_position = get_random_empty_position(snake);
-            dynamic_array_append(&snake->array_food, &new_food_position);
-            cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
+            vector2i_t new_food_position;
+            if (get_random_empty_position(snake, &new_food_position) == true) {
+                dynamic_array_append(&snake->array_food, &new_food_position);
+                cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
+            }
 
             return true;
         }
@@ -273,7 +345,9 @@ void snake_update_fixed(snake_t* snake) {
 
     if (test_body_collision(snake) == true) {
         // Restart the game if the snake collides with its own array_body.
-        reset(snake);
+        if (reset(snake) == false) {
+            snake->window.is_running = false;
+        }
         return;
     }
 
@@ -288,8 +362,9 @@ void snake_update_fixed(snake_t* snake) {
 
         dynamic_array_append(&snake->array_body, &new_segment_position);
 
-        sprintf(snake->text_score_buffer, "Score: %zu", snake->array_body.size);
-        TTF_SetTextString(snake->text_score, snake->text_score_buffer, strlen(snake->text_score_buffer));
+        if (update_score_text(snake) == false) {
+            snake->window.is_running = false;
+        }
     }
 }
 
@@ -303,7 +378,7 @@ void snake_handle_events(snake_t* snake) {
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN) {
-            if (event.key.scancode == SDL_SCANCODE_ESCAPE) {
+            if (event.key.scancode == SDL_SCANCODE_ESCAPE && event.key.repeat == 0) {
                 snake->is_paused = !snake->is_paused;
             }
 
@@ -317,7 +392,11 @@ void snake_render_frame(snake_t* snake) {
     SDL_assert(snake->window.sdl_window != NULL);
     SDL_assert(snake->window.sdl_renderer != NULL);
 
-    SDL_RenderClear(snake->window.sdl_renderer);
+    if (SDL_RenderClear(snake->window.sdl_renderer) == false) {
+        SDL_Log("Failed to clear renderer: %s", SDL_GetError());
+        snake->window.is_running = false;
+        return;
+    }
 
     // Loop through all the cells and render them based on their color.
     for (int x = 0; x < SNAKE_GRID_X; ++x) {
@@ -335,6 +414,9 @@ void snake_render_frame(snake_t* snake) {
                 case SNAKE_COLOR_GREEN:
                     SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 255, 0, 255);
                     break;
+                case SNAKE_COLOR_DARK_GREEN:
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 180, 0, 255);
+                    break;
                 case SNAKE_COLOR_RED:
                     SDL_SetRenderDrawColor(snake->window.sdl_renderer, 255, 0, 0, 255);
                     break;
@@ -350,13 +432,25 @@ void snake_render_frame(snake_t* snake) {
     }
 
     vector2i_t screen_size;
-    SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y);
+    if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
+        SDL_Log("Failed to query render output size: %s", SDL_GetError());
+        snake->window.is_running = false;
+        return;
+    }
 
     vector2i_t text_size;
-    TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y);
+    if (TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y) == false) {
+        SDL_Log("Failed to measure score text: %s", SDL_GetError());
+        snake->window.is_running = false;
+        return;
+    }
 
     // Render the score text at the top center of the screen.
-    TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f);
+    if (TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f) == false) {
+        SDL_Log("Failed to render score text: %s", SDL_GetError());
+        snake->window.is_running = false;
+        return;
+    }
 
     SDL_RenderPresent(snake->window.sdl_renderer);
 }

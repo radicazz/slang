@@ -26,13 +26,17 @@ static void text_destroy(window_t* window) {
 
     if (window->ttf_font_default != NULL) {
         TTF_CloseFont(window->ttf_font_default);
+        window->ttf_font_default = NULL;
     }
 
     if (window->ttf_text_engine != NULL) {
         TTF_DestroyRendererTextEngine(window->ttf_text_engine);
+        window->ttf_text_engine = NULL;
     }
 
-    TTF_Quit();
+    if (TTF_WasInit()) {
+        TTF_Quit();
+    }
 }
 
 bool window_create(window_t* window, const char* title, int width, int height) {
@@ -47,11 +51,14 @@ bool window_create(window_t* window, const char* title, int width, int height) {
     window->ttf_text_engine = NULL;
     window->ttf_font_default = NULL;
 
+    window->is_running = false;
+
     if (SDL_Init(SDL_INIT_VIDEO) == false) {
         return false;
     }
 
     if (SDL_CreateWindowAndRenderer(title, width, height, 0, &window->sdl_window, &window->sdl_renderer) == false) {
+        SDL_Quit();
         return false;
     };
 
@@ -59,8 +66,10 @@ bool window_create(window_t* window, const char* title, int width, int height) {
     window->time.frame_last = window->time.frame_first;
     window->time.frame_delta = 0;
     window->time.accumulator = 0;
+    window->time.frame_accumulated = false;
 
     if (text_create(window) == false) {
+        window_destroy(window);
         return false;
     }
 
@@ -76,6 +85,7 @@ void window_destroy(window_t* window) {
     window->time.frame_last = 0;
     window->time.frame_delta = 0;
     window->time.accumulator = 0;
+    window->time.frame_accumulated = false;
 
     if (window->sdl_renderer != NULL) {
         SDL_DestroyRenderer(window->sdl_renderer);
@@ -95,14 +105,26 @@ bool window_can_update_fixed(window_t* window, const Uint64 tick_interval) {
     SDL_assert(tick_interval > 0);
 
     const Uint64 time_current = SDL_GetTicks();
-    window->time.frame_delta = time_current - window->time.frame_last;
-    window->time.frame_last = time_current;
 
-    window->time.accumulator += window->time.frame_delta;
+    if (window->time.frame_accumulated == true && time_current > window->time.frame_last) {
+        window->time.frame_accumulated = false;
+    }
+
+    if (window->time.frame_accumulated == false) {
+        window->time.frame_delta = time_current - window->time.frame_last;
+        window->time.frame_last = time_current;
+        window->time.accumulator += window->time.frame_delta;
+        window->time.frame_accumulated = true;
+    }
+
     if (window->time.accumulator >= tick_interval) {
         window->time.accumulator -= tick_interval;
+        if (window->time.accumulator < tick_interval) {
+            window->time.frame_accumulated = false;
+        }
         return true;
     }
 
+    window->time.frame_accumulated = false;
     return false;
 }

@@ -21,6 +21,7 @@ typedef enum {
     SNAKE_COLOR_BLACK,
     SNAKE_COLOR_GRAY,
     SNAKE_COLOR_GREEN,
+    SNAKE_COLOR_DARK_GREEN,
     SNAKE_COLOR_RED
 } snake_colors_t;
 
