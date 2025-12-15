@@ -1,23 +1,32 @@
 #include "window.h"
 #include "SDL3/SDL_init.h"
+#include <SDL3/SDL_log.h>
 
 static bool text_create(window_t* window) {
     SDL_assert(window != NULL);
 
     if (TTF_Init() == false) {
+        SDL_Log("Failed to initialize SDL_ttf: %s", SDL_GetError());
         return false;
     }
 
     window->ttf_text_engine = TTF_CreateRendererTextEngine(window->sdl_renderer);
     if (window->ttf_text_engine == NULL) {
+        SDL_Log("Failed to create TTF text engine: %s", SDL_GetError());
+        TTF_Quit();
         return false;
     }
 
     window->ttf_font_default = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
     if (window->ttf_font_default == NULL) {
+        SDL_Log("Failed to load font 'assets/fonts/Segoe UI.ttf': %s", SDL_GetError());
+        TTF_DestroyRendererTextEngine(window->ttf_text_engine);
+        window->ttf_text_engine = NULL;
+        TTF_Quit();
         return false;
     }
 
+    SDL_Log("Successfully initialized text rendering (font: Segoe UI, size: 16)");
     return true;
 }
 
@@ -54,13 +63,17 @@ bool window_create(window_t* window, const char* title, int width, int height) {
     window->is_running = false;
 
     if (SDL_Init(SDL_INIT_VIDEO) == false) {
+        SDL_Log("Failed to initialize SDL video subsystem: %s", SDL_GetError());
         return false;
     }
 
     if (SDL_CreateWindowAndRenderer(title, width, height, 0, &window->sdl_window, &window->sdl_renderer) == false) {
+        SDL_Log("Failed to create window and renderer: %s", SDL_GetError());
         SDL_Quit();
         return false;
-    };
+    }
+
+    SDL_Log("Successfully created window: %s (%dx%d)", title, width, height);
 
     window->time.frame_first = SDL_GetTicks();
     window->time.frame_last = window->time.frame_first;

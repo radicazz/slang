@@ -1,10 +1,17 @@
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_log.h>
 
 #include "snake.h"
 
 int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+
+    SDL_Log("Starting snake game");
+
     snake_t snake;
     if (snake_create(&snake, "snake") == false) {
+        SDL_Log("Failed to initialize game, exiting");
         return 1;
     }
 
@@ -22,6 +29,7 @@ int main(int argc, char* argv[]) {
         snake_render_frame(&snake);
     }
 
+    SDL_Log("Game shutting down");
     snake_destroy(&snake);
     return 0;
 }

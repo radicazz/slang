@@ -33,6 +33,7 @@ static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) 
         }
     }
 
+    SDL_Log("Failed to find empty position on grid (grid full or no space available)");
     return false;
 }
 
@@ -65,6 +66,8 @@ static bool update_score_text(snake_t* snake) {
 static bool reset(snake_t* snake) {
     SDL_assert(snake != NULL);
 
+    SDL_Log("Resetting game state");
+
     snake->is_paused = false;
 
     dynamic_array_destroy(&snake->array_food);
@@ -88,6 +91,7 @@ static bool reset(snake_t* snake) {
 
     vector2i_t head_position;
     if (get_random_empty_position(snake, &head_position) == false) {
+        SDL_Log("Failed to find starting position for snake head");
         return false;
     }
 
@@ -101,6 +105,7 @@ static bool reset(snake_t* snake) {
     for (int i = 0; i < snake->array_food.capacity; ++i) {
         vector2i_t food_position;
         if (get_random_empty_position(snake, &food_position) == false) {
+            SDL_Log("Warning: Could only spawn %d food items", i);
             break;
         }
 
@@ -116,6 +121,7 @@ static bool reset(snake_t* snake) {
         return false;
     }
 
+    SDL_Log("Game reset complete (food items: %zu)", snake->array_food.size);
     return true;
 }
 
@@ -123,9 +129,12 @@ bool snake_create(snake_t* snake, const char* title) {
     SDL_assert(snake != NULL);
     SDL_assert(title != NULL);
 
+    SDL_Log("Initializing snake game");
+
     memset(snake, 0, sizeof(*snake));
 
     if (window_create(&snake->window, title, WINDOW_WIDTH, WINDOW_HEIGHT) == false) {
+        SDL_Log("Failed to create game window");
         return false;
     }
 
@@ -144,6 +153,7 @@ bool snake_create(snake_t* snake, const char* title) {
         seed = SDL_GetPerformanceCounter() | 1u;
     }
     SDL_srand(seed);
+    SDL_Log("RNG initialized with seed: %llu", (unsigned long long)seed);
 
     dynamic_array_init(&snake->array_food);
     dynamic_array_init(&snake->array_body);
@@ -151,23 +161,28 @@ bool snake_create(snake_t* snake, const char* title) {
     const int written =
         snprintf(snake->text_score_buffer, sizeof(snake->text_score_buffer), "Score: 0");
     if (written < 0 || (size_t)written >= sizeof(snake->text_score_buffer)) {
+        SDL_Log("Failed to format initial score text");
         goto fail;
     }
 
     snake->text_score = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
                                        snake->text_score_buffer, (size_t)written);
     if (snake->text_score == NULL) {
+        SDL_Log("Failed to create score text object: %s", SDL_GetError());
         goto fail;
     }
 
     if (TTF_SetTextColor(snake->text_score, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set score text color: %s", SDL_GetError());
         goto fail;
     }
 
     if (reset(snake) == false) {
+        SDL_Log("Failed to initialize game state");
         goto fail;
     }
 
+    SDL_Log("Snake game initialized successfully");
     return snake->window.is_running;
 
 fail:
@@ -353,8 +368,10 @@ void snake_update_fixed(snake_t* snake) {
     move_head_and_body(snake);
 
     if (test_body_collision(snake) == true) {
+        SDL_Log("Collision detected! Score: %zu", snake->array_body.size);
         // Restart the game if the snake collides with its own array_body.
         if (reset(snake) == false) {
+            SDL_Log("Failed to reset game after collision");
             snake->window.is_running = false;
         }
         return;
