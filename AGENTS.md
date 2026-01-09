@@ -13,8 +13,11 @@ ctest --test-dir build --output-on-failure
 - `src/main.c`: main loop (fixed-timestep update + render).
 - `src/snake.c`, `src/snake.h`: game state, movement, collisions, rendering.
 - `src/modules/window.c`, `src/modules/window.h`: SDL window/renderer + SDL_ttf init/teardown + timing.
+- `src/modules/audio.c`, `src/modules/audio.h`: audio manager + sound loading/playing.
+- `src/modules/ui.c`, `src/modules/ui.h`: reusable UI widgets (buttons/panels).
 - `src/utils/*`: `vector2i_*` + `dynamic_array_*`.
-- `tests/dynamic_array_tests.c`: only unit test target (`dynamic_array_tests`).
+- `tests/dynamic_array_tests.c`: unit test target (`dynamic_array_tests`).
+- `tests/vector_tests.c`: unit test target (`vector_tests`).
 
 ## Conventions (follow these)
 
@@ -24,6 +27,7 @@ ctest --test-dir build --output-on-failure
 - Lifetimes: `*_destroy()` must be safe after partial init; free resources once, then set pointers to `NULL`.
 - Avoid unbounded loops; random placement must have an upper bound + a deterministic fallback.
 - Prefer `snprintf` over `sprintf`; avoid implicit truncation.
+- Commit messages: use Conventional Commit prefixes (`feat:`, `fix:`, `refactor:`, `chore:`, etc.) with a short summary.
 
 ## CMake notes
 
