@@ -12,7 +12,7 @@ ctest --test-dir build --output-on-failure
 
 - `src/main.c`: main loop (fixed-timestep update + render).
 - `src/snake.c`, `src/snake.h`: game state, movement, collisions, rendering.
-- `src/helpers/window.c`, `src/helpers/window.h`: SDL window/renderer + SDL_ttf init/teardown + timing.
+- `src/modules/window.c`, `src/modules/window.h`: SDL window/renderer + SDL_ttf init/teardown + timing.
 - `src/utils/*`: `vector2i_*` + `dynamic_array_*`.
 - `tests/dynamic_array_tests.c`: only unit test target (`dynamic_array_tests`).
 

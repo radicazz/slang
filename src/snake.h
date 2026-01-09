@@ -1,8 +1,8 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include "helpers/window.h"
-#include "helpers/audio.h"
+#include "modules/window.h"
+#include "modules/audio.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
