@@ -55,6 +55,11 @@ typedef struct {
 
     TTF_Text* text_start_title;
     TTF_Text* text_start_button;
+
+    TTF_Text* text_game_over_title;
+    TTF_Text* text_game_over_score;
+    char text_game_over_score_buffer[48];
+    TTF_Text* text_restart_button;
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);
