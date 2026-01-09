@@ -39,7 +39,7 @@ static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, 
 
 static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t* title_size,
                                 const vector2i_t* subtitle_size, bool has_subtitle, const vector2i_t* button_label_size,
-                                snake_menu_layout_t* out_layout) {
+                                bool has_button, snake_menu_layout_t* out_layout) {
     SDL_assert(screen_size != NULL);
     SDL_assert(title_size != NULL);
     SDL_assert(button_label_size != NULL);
@@ -47,21 +47,31 @@ static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t*
 
     ui_button_t button;
     ui_button_init(&button, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0});
-    ui_button_layout_from_label(&button, button_label_size, 0.f, 0.f, k_menu_button_padding_x, k_menu_button_padding_y);
-    const float button_width = button.rect.w;
-    const float button_height = button.rect.h;
+
+    float button_width = 0.f;
+    float button_height = 0.f;
+    if (has_button == true && button_label_size != NULL) {
+        ui_button_layout_from_label(&button, button_label_size, 0.f, 0.f, k_menu_button_padding_x,
+                                    k_menu_button_padding_y);
+        button_width = button.rect.w;
+        button_height = button.rect.h;
+    }
 
     float content_width = (float)title_size->x;
     if (has_subtitle == true && subtitle_size != NULL) {
         content_width = SDL_max(content_width, (float)subtitle_size->x);
     }
-    content_width = SDL_max(content_width, button_width);
+    if (has_button == true) {
+        content_width = SDL_max(content_width, button_width);
+    }
 
     float content_height = (float)title_size->y;
     if (has_subtitle == true && subtitle_size != NULL) {
         content_height += k_menu_text_gap + (float)subtitle_size->y;
     }
-    content_height += k_menu_text_gap + button_height;
+    if (has_button == true) {
+        content_height += k_menu_text_gap + button_height;
+    }
 
     vector2i_t content_size = {(int)(content_width + 0.5f), (int)(content_height + 0.5f)};
 
@@ -83,20 +93,27 @@ static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t*
         cursor_y += (float)subtitle_size->y;
     }
 
-    cursor_y += k_menu_text_gap;
-    const float button_center_x = panel.rect.x + panel.rect.w * 0.5f;
-    const float button_center_y = cursor_y + button_height * 0.5f;
-    ui_button_layout_from_label(&button, button_label_size, button_center_x, button_center_y, k_menu_button_padding_x,
-                                k_menu_button_padding_y);
-    out_layout->button_rect = button.rect;
+    out_layout->has_button = has_button;
+    if (has_button == true && button_label_size != NULL) {
+        cursor_y += k_menu_text_gap;
+        const float button_center_x = panel.rect.x + panel.rect.w * 0.5f;
+        const float button_center_y = cursor_y + button_height * 0.5f;
+        ui_button_layout_from_label(&button, button_label_size, button_center_x, button_center_y,
+                                    k_menu_button_padding_x, k_menu_button_padding_y);
+        out_layout->button_rect = button.rect;
+    } else {
+        out_layout->button_rect = (SDL_FRect){0.f, 0.f, 0.f, 0.f};
+    }
 }
 
 bool snake_menu_get_layout(snake_t* snake, TTF_Text* title_text, TTF_Text* subtitle_text, bool has_subtitle,
-                           TTF_Text* button_text, snake_menu_layout_t* out_layout) {
+                           TTF_Text* button_text, bool has_button, snake_menu_layout_t* out_layout) {
     SDL_assert(snake != NULL);
     SDL_assert(title_text != NULL);
-    SDL_assert(button_text != NULL);
     SDL_assert(out_layout != NULL);
+    if (has_button == true) {
+        SDL_assert(button_text != NULL);
+    }
 
     vector2i_t screen_size;
     if (get_screen_size(snake, &screen_size) == false) {
@@ -116,11 +133,13 @@ bool snake_menu_get_layout(snake_t* snake, TTF_Text* title_text, TTF_Text* subti
         }
     }
 
-    vector2i_t button_size;
-    if (get_text_size(snake, button_text, &button_size, "button") == false) {
-        return false;
+    vector2i_t button_size = {0, 0};
+    if (has_button == true) {
+        if (get_text_size(snake, button_text, &button_size, "button") == false) {
+            return false;
+        }
     }
 
-    compute_menu_layout(&screen_size, &title_size, &subtitle_size, has_subtitle, &button_size, out_layout);
+    compute_menu_layout(&screen_size, &title_size, &subtitle_size, has_subtitle, &button_size, has_button, out_layout);
     return true;
 }

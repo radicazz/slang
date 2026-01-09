@@ -126,6 +126,38 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    const char* resume_title = "Resuming";
+    snake->text_resume_title = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                              resume_title, SDL_strlen(resume_title));
+    if (snake->text_resume_title == NULL) {
+        SDL_Log("Failed to create resume title text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_resume_title, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set resume title text color: %s", SDL_GetError());
+        return false;
+    }
+
+    const int resume_written =
+        snprintf(snake->text_resume_countdown_buffer, sizeof(snake->text_resume_countdown_buffer), "3");
+    if (resume_written < 0 || (size_t)resume_written >= sizeof(snake->text_resume_countdown_buffer)) {
+        SDL_Log("Failed to format initial resume countdown text");
+        return false;
+    }
+
+    snake->text_resume_countdown = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                  snake->text_resume_countdown_buffer, (size_t)resume_written);
+    if (snake->text_resume_countdown == NULL) {
+        SDL_Log("Failed to create resume countdown text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_resume_countdown, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set resume countdown text color: %s", SDL_GetError());
+        return false;
+    }
+
     return true;
 }
 
@@ -170,6 +202,16 @@ void snake_text_destroy(snake_t* snake) {
     if (snake->text_restart_button != NULL) {
         TTF_DestroyText(snake->text_restart_button);
         snake->text_restart_button = NULL;
+    }
+
+    if (snake->text_resume_title != NULL) {
+        TTF_DestroyText(snake->text_resume_title);
+        snake->text_resume_title = NULL;
+    }
+
+    if (snake->text_resume_countdown != NULL) {
+        TTF_DestroyText(snake->text_resume_countdown);
+        snake->text_resume_countdown = NULL;
     }
 }
 
@@ -224,6 +266,30 @@ bool snake_text_update_game_over(snake_t* snake) {
 
     if (TTF_SetTextString(snake->text_game_over_score, snake->text_game_over_score_buffer, (size_t)written) == false) {
         SDL_Log("Failed to update game over score text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+bool snake_text_update_resume_countdown(snake_t* snake, int seconds) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_resume_countdown != NULL);
+
+    if (seconds < 0) {
+        seconds = 0;
+    }
+
+    const int written =
+        snprintf(snake->text_resume_countdown_buffer, sizeof(snake->text_resume_countdown_buffer), "%d", seconds);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_resume_countdown_buffer)) {
+        SDL_Log("Failed to format resume countdown text.");
+        return false;
+    }
+
+    if (TTF_SetTextString(snake->text_resume_countdown, snake->text_resume_countdown_buffer, (size_t)written) ==
+        false) {
+        SDL_Log("Failed to update resume countdown text: %s", SDL_GetError());
         return false;
     }
 

@@ -1,5 +1,6 @@
 #include "snake_state.h"
 
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_log.h>
 
 #include "snake_text.h"
@@ -208,6 +209,15 @@ static bool test_food_collision(snake_t* snake) {
     return false;
 }
 
+static int get_resume_seconds_remaining(Uint64 now_ms, Uint64 end_ms) {
+    if (now_ms >= end_ms) {
+        return 0;
+    }
+
+    const Uint64 remaining_ms = end_ms - now_ms;
+    return (int)((remaining_ms + 999u) / 1000u);
+}
+
 bool snake_state_reset(snake_t* snake) {
     SDL_assert(snake != NULL);
 
@@ -303,8 +313,40 @@ void snake_state_handle_movement_key(snake_t* snake, SDL_Scancode scancode) {
     }
 }
 
+void snake_state_begin_resume(snake_t* snake) {
+    SDL_assert(snake != NULL);
+
+    snake->state = SNAKE_STATE_RESUMING;
+    snake->resume_countdown_end_ms = SDL_GetTicks() + 3000u;
+    snake->resume_countdown_value = -1;
+
+    const int seconds = get_resume_seconds_remaining(SDL_GetTicks(), snake->resume_countdown_end_ms);
+    if (snake_text_update_resume_countdown(snake, seconds) == false) {
+        snake->window.is_running = false;
+    } else {
+        snake->resume_countdown_value = seconds;
+    }
+}
+
 void snake_update_fixed(snake_t* snake) {
     SDL_assert(snake != NULL);
+
+    if (snake->state == SNAKE_STATE_RESUMING) {
+        const Uint64 now_ms = SDL_GetTicks();
+        const int seconds = get_resume_seconds_remaining(now_ms, snake->resume_countdown_end_ms);
+        if (seconds != snake->resume_countdown_value) {
+            if (snake_text_update_resume_countdown(snake, seconds) == false) {
+                snake->window.is_running = false;
+                return;
+            }
+            snake->resume_countdown_value = seconds;
+        }
+
+        if (now_ms >= snake->resume_countdown_end_ms) {
+            snake->state = SNAKE_STATE_PLAYING;
+        }
+        return;
+    }
 
     if (snake->state != SNAKE_STATE_PLAYING) {
         return;

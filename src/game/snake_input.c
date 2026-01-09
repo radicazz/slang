@@ -24,7 +24,9 @@ void snake_handle_events(snake_t* snake) {
                         snake->window.is_running = false;
                     }
                 } else if (snake->state == SNAKE_STATE_PAUSED) {
-                    snake->state = SNAKE_STATE_PLAYING;
+                    snake_state_begin_resume(snake);
+                } else if (snake->state == SNAKE_STATE_RESUMING) {
+                    snake->state = SNAKE_STATE_PAUSED;
                 }
             }
 
@@ -35,7 +37,7 @@ void snake_handle_events(snake_t* snake) {
             event.button.down == true) {
             if (snake->state == SNAKE_STATE_PAUSED) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout(snake, snake->text_pause, NULL, false, snake->text_resume, &layout) ==
+                if (snake_menu_get_layout(snake, snake->text_pause, NULL, false, snake->text_resume, true, &layout) ==
                     false) {
                     return;
                 }
@@ -43,11 +45,11 @@ void snake_handle_events(snake_t* snake) {
                 ui_button_t button = {0};
                 button.rect = layout.button_rect;
                 if (ui_button_contains(&button, event.button.x, event.button.y) == true) {
-                    snake->state = SNAKE_STATE_PLAYING;
+                    snake_state_begin_resume(snake);
                 }
             } else if (snake->state == SNAKE_STATE_START) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout(snake, snake->text_start_title, NULL, false, snake->text_start_button,
+                if (snake_menu_get_layout(snake, snake->text_start_title, NULL, false, snake->text_start_button, true,
                                           &layout) == false) {
                     return;
                 }
@@ -64,7 +66,7 @@ void snake_handle_events(snake_t* snake) {
             } else if (snake->state == SNAKE_STATE_GAME_OVER) {
                 snake_menu_layout_t layout;
                 if (snake_menu_get_layout(snake, snake->text_game_over_title, snake->text_game_over_score, true,
-                                          snake->text_restart_button, &layout) == false) {
+                                          snake->text_restart_button, true, &layout) == false) {
                     return;
                 }
 

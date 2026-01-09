@@ -77,27 +77,36 @@ void snake_render_frame(snake_t* snake) {
     }
 
     if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START ||
-        snake->state == SNAKE_STATE_GAME_OVER) {
+        snake->state == SNAKE_STATE_RESUMING || snake->state == SNAKE_STATE_GAME_OVER) {
         TTF_Text* title_text = NULL;
         TTF_Text* subtitle_text = NULL;
         bool has_subtitle = false;
         TTF_Text* button_text = NULL;
+        bool has_button = false;
 
         if (snake->state == SNAKE_STATE_PAUSED) {
             title_text = snake->text_pause;
             button_text = snake->text_resume;
+            has_button = true;
         } else if (snake->state == SNAKE_STATE_START) {
             title_text = snake->text_start_title;
             button_text = snake->text_start_button;
+            has_button = true;
+        } else if (snake->state == SNAKE_STATE_RESUMING) {
+            title_text = snake->text_resume_title;
+            subtitle_text = snake->text_resume_countdown;
+            has_subtitle = true;
         } else {
             title_text = snake->text_game_over_title;
             subtitle_text = snake->text_game_over_score;
             has_subtitle = true;
             button_text = snake->text_restart_button;
+            has_button = true;
         }
 
         snake_menu_layout_t layout;
-        if (snake_menu_get_layout(snake, title_text, subtitle_text, has_subtitle, button_text, &layout) == false) {
+        if (snake_menu_get_layout(snake, title_text, subtitle_text, has_subtitle, button_text, has_button, &layout) ==
+            false) {
             return;
         }
 
@@ -123,12 +132,14 @@ void snake_render_frame(snake_t* snake) {
         }
 
         ui_button_t button;
-        ui_button_init(&button, k_color_menu_button, k_color_menu_button_border);
-        button.rect = layout.button_rect;
-        if (ui_button_render(snake->window.sdl_renderer, &button) == false) {
-            SDL_Log("Failed to render menu button: %s", SDL_GetError());
-            snake->window.is_running = false;
-            return;
+        if (layout.has_button == true) {
+            ui_button_init(&button, k_color_menu_button, k_color_menu_button_border);
+            button.rect = layout.button_rect;
+            if (ui_button_render(snake->window.sdl_renderer, &button) == false) {
+                SDL_Log("Failed to render menu button: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
         }
 
         if (TTF_DrawRendererText(title_text, layout.title_pos.x, layout.title_pos.y) == false) {
@@ -145,18 +156,20 @@ void snake_render_frame(snake_t* snake) {
             }
         }
 
-        vector2i_t button_text_size;
-        if (get_text_size(snake, button_text, &button_text_size, "menu button") == false) {
-            return;
-        }
+        if (layout.has_button == true) {
+            vector2i_t button_text_size;
+            if (get_text_size(snake, button_text, &button_text_size, "menu button") == false) {
+                return;
+            }
 
-        float button_text_x = 0.f;
-        float button_text_y = 0.f;
-        ui_button_get_label_position(&button, &button_text_size, &button_text_x, &button_text_y);
-        if (TTF_DrawRendererText(button_text, button_text_x, button_text_y) == false) {
-            SDL_Log("Failed to render menu button text: %s", SDL_GetError());
-            snake->window.is_running = false;
-            return;
+            float button_text_x = 0.f;
+            float button_text_y = 0.f;
+            ui_button_get_label_position(&button, &button_text_size, &button_text_x, &button_text_y);
+            if (TTF_DrawRendererText(button_text, button_text_x, button_text_y) == false) {
+                SDL_Log("Failed to render menu button text: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
         }
 
         if (SDL_SetRenderDrawBlendMode(snake->window.sdl_renderer, SDL_BLENDMODE_NONE) == false) {
