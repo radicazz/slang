@@ -11,7 +11,12 @@ ctest --test-dir build --output-on-failure
 ## Repo map
 
 - `src/main.c`: main loop (fixed-timestep update + render).
-- `src/snake.c`, `src/snake.h`: game state, movement, collisions, rendering.
+- `src/snake.c`, `src/snake.h`: game init/teardown + public API.
+- `src/game/snake_state.c`, `src/game/snake_state.h`: game state, movement, collisions, reset.
+- `src/game/snake_input.c`, `src/game/snake_input.h`: input handling + menu actions.
+- `src/game/snake_render.c`, `src/game/snake_render.h`: rendering (grid, score, menus).
+- `src/game/snake_text.c`, `src/game/snake_text.h`: text creation/update/destroy.
+- `src/game/snake_menu.c`, `src/game/snake_menu.h`: menu layout shared by input/render.
 - `src/modules/window.c`, `src/modules/window.h`: SDL window/renderer + SDL_ttf init/teardown + timing.
 - `src/modules/audio.c`, `src/modules/audio.h`: audio manager + sound loading/playing.
 - `src/modules/ui.c`, `src/modules/ui.h`: reusable UI widgets (buttons/panels).
