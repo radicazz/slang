@@ -8,7 +8,6 @@
 #include <SDL3/SDL_log.h>
 
 static const SDL_Color k_color_empty = {0, 0, 0, 255};
-static const SDL_Color k_color_wall = {50, 50, 50, 255};
 static const SDL_Color k_color_food = {255, 0, 0, 255};
 static const SDL_Color k_color_snake_head = {0, 255, 0, 255};
 static const SDL_Color k_color_pause_overlay = {0, 0, 0, 160};
@@ -154,12 +153,7 @@ static bool reset(snake_t* snake) {
             cell->position.x = x;
             cell->position.y = y;
 
-            // Set the border cells to gray and the rest to black.
-            if (x == 0 || x == SNAKE_GRID_X - 1 || y == 0 || y == SNAKE_GRID_Y - 1) {
-                cell_set_state_and_color(snake, &cell->position, SNAKE_CELL_WALL, &k_color_wall);
-            } else {
-                cell_set_state_and_color(snake, &cell->position, SNAKE_CELL_EMPTY, &k_color_empty);
-            }
+            cell_set_state_and_color(snake, &cell->position, SNAKE_CELL_EMPTY, &k_color_empty);
         }
     }
 
