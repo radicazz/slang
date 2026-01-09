@@ -37,11 +37,47 @@ static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) 
     return false;
 }
 
+static SDL_Color color_to_render_color(snake_colors_t color) {
+    SDL_Color render_color = {0, 0, 0, 255};
+
+    switch (color) {
+        case SNAKE_COLOR_BLACK:
+            render_color.r = 0;
+            render_color.g = 0;
+            render_color.b = 0;
+            break;
+        case SNAKE_COLOR_GRAY:
+            render_color.r = 50;
+            render_color.g = 50;
+            render_color.b = 50;
+            break;
+        case SNAKE_COLOR_GREEN:
+            render_color.r = 0;
+            render_color.g = 255;
+            render_color.b = 0;
+            break;
+        case SNAKE_COLOR_DARK_GREEN:
+            render_color.r = 0;
+            render_color.g = 180;
+            render_color.b = 0;
+            break;
+        case SNAKE_COLOR_RED:
+            render_color.r = 255;
+            render_color.g = 0;
+            render_color.b = 0;
+            break;
+    }
+
+    return render_color;
+}
+
 static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_colors_t color) {
     SDL_assert(snake != NULL);
     SDL_assert(position != NULL);
 
-    snake->cells[position->x][position->y].color = color;
+    snake_cell_t* const cell = &snake->cells[position->x][position->y];
+    cell->color = color;
+    cell->render_color = color_to_render_color(color);
 }
 
 static bool update_score_text(snake_t* snake) {
@@ -82,9 +118,9 @@ static bool reset(snake_t* snake) {
 
             // Set the border cells to gray and the rest to black.
             if (x == 0 || x == SNAKE_GRID_X - 1 || y == 0 || y == SNAKE_GRID_Y - 1) {
-                cell->color = SNAKE_COLOR_GRAY;
+                cell_set_color(snake, &cell->position, SNAKE_COLOR_GRAY);
             } else {
-                cell->color = SNAKE_COLOR_BLACK;
+                cell_set_color(snake, &cell->position, SNAKE_COLOR_BLACK);
             }
         }
     }

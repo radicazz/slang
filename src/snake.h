@@ -29,6 +29,7 @@ typedef enum {
 typedef struct {
     vector2i_t position;
     snake_colors_t color;
+    SDL_Color render_color;
 } snake_cell_t;
 
 typedef struct {
