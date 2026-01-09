@@ -18,6 +18,8 @@ typedef enum {
     SNAKE_DIRECTION_RIGHT
 } snake_direction_t;
 
+typedef enum { SNAKE_STATE_START, SNAKE_STATE_PLAYING, SNAKE_STATE_PAUSED, SNAKE_STATE_GAME_OVER } snake_game_state_t;
+
 typedef enum { SNAKE_CELL_EMPTY, SNAKE_CELL_WALL, SNAKE_CELL_FOOD, SNAKE_CELL_SNAKE } snake_cell_state_t;
 
 typedef struct {
@@ -30,7 +32,7 @@ typedef struct {
     window_t window;
     audio_manager_t audio;
 
-    bool is_paused;
+    snake_game_state_t state;
 
     snake_direction_t current_direction;
 
@@ -50,6 +52,14 @@ typedef struct {
     char text_pause_buffer[32];
 
     TTF_Text* text_resume;
+
+    TTF_Text* text_start_title;
+    TTF_Text* text_start_button;
+
+    TTF_Text* text_game_over_title;
+    TTF_Text* text_game_over_score;
+    char text_game_over_score_buffer[48];
+    TTF_Text* text_restart_button;
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);
