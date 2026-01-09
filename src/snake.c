@@ -10,6 +10,17 @@ static const SDL_Color k_color_empty = {0, 0, 0, 255};
 static const SDL_Color k_color_wall = {50, 50, 50, 255};
 static const SDL_Color k_color_food = {255, 0, 0, 255};
 static const SDL_Color k_color_snake_head = {0, 255, 0, 255};
+static const SDL_Color k_color_pause_overlay = {0, 0, 0, 160};
+static const SDL_Color k_color_pause_panel = {25, 25, 25, 220};
+static const SDL_Color k_color_pause_button = {220, 220, 220, 255};
+static const SDL_Color k_color_pause_button_border = {180, 180, 180, 255};
+
+static const float k_pause_panel_padding = 20.f;
+static const float k_pause_text_gap = 16.f;
+static const float k_pause_button_padding_x = 28.f;
+static const float k_pause_button_padding_y = 12.f;
+
+static bool update_pause_text(snake_t* snake);
 
 static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) {
     SDL_assert(snake != NULL);
@@ -70,7 +81,58 @@ static bool update_score_text(snake_t* snake) {
         return false;
     }
 
+    return update_pause_text(snake);
+}
+
+static bool update_pause_text(snake_t* snake) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_pause != NULL);
+
+    const int written =
+        snprintf(snake->text_pause_buffer, sizeof(snake->text_pause_buffer), "Paused: %zu", snake->array_body.size);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_pause_buffer)) {
+        SDL_Log("Failed to format pause text.");
+        return false;
+    }
+
+    if (TTF_SetTextString(snake->text_pause, snake->text_pause_buffer, (size_t)written) == false) {
+        SDL_Log("Failed to update pause text: %s", SDL_GetError());
+        return false;
+    }
+
     return true;
+}
+
+static void compute_pause_layout(const vector2i_t* screen_size, const vector2i_t* pause_text_size,
+                                 const vector2i_t* resume_text_size, SDL_FRect* out_panel_rect,
+                                 SDL_FRect* out_button_rect) {
+    SDL_assert(screen_size != NULL);
+    SDL_assert(pause_text_size != NULL);
+    SDL_assert(resume_text_size != NULL);
+    SDL_assert(out_panel_rect != NULL);
+    SDL_assert(out_button_rect != NULL);
+
+    const float button_width = (float)resume_text_size->x + k_pause_button_padding_x * 2.f;
+    const float button_height = (float)resume_text_size->y + k_pause_button_padding_y * 2.f;
+
+    const float panel_width = SDL_max((float)pause_text_size->x, button_width) + k_pause_panel_padding * 2.f;
+    const float panel_height =
+        (float)pause_text_size->y + k_pause_text_gap + button_height + k_pause_panel_padding * 2.f;
+
+    out_panel_rect->x = ((float)screen_size->x - panel_width) * 0.5f;
+    out_panel_rect->y = ((float)screen_size->y - panel_height) * 0.5f;
+    out_panel_rect->w = panel_width;
+    out_panel_rect->h = panel_height;
+
+    out_button_rect->w = button_width;
+    out_button_rect->h = button_height;
+    out_button_rect->x = out_panel_rect->x + (panel_width - button_width) * 0.5f;
+    out_button_rect->y = out_panel_rect->y + k_pause_panel_padding + (float)pause_text_size->y + k_pause_text_gap;
+}
+
+static bool is_point_inside_rect(float x, float y, const SDL_FRect* rect) {
+    SDL_assert(rect != NULL);
+    return x >= rect->x && x <= rect->x + rect->w && y >= rect->y && y <= rect->y + rect->h;
 }
 
 static bool reset(snake_t* snake) {
@@ -186,6 +248,37 @@ bool snake_create(snake_t* snake, const char* title) {
         goto fail;
     }
 
+    const int pause_written = snprintf(snake->text_pause_buffer, sizeof(snake->text_pause_buffer), "Paused: 0");
+    if (pause_written < 0 || (size_t)pause_written >= sizeof(snake->text_pause_buffer)) {
+        SDL_Log("Failed to format initial pause text");
+        goto fail;
+    }
+
+    snake->text_pause = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                       snake->text_pause_buffer, (size_t)pause_written);
+    if (snake->text_pause == NULL) {
+        SDL_Log("Failed to create pause text object: %s", SDL_GetError());
+        goto fail;
+    }
+
+    if (TTF_SetTextColor(snake->text_pause, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set pause text color: %s", SDL_GetError());
+        goto fail;
+    }
+
+    const char* resume_label = "Resume";
+    snake->text_resume = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default, resume_label,
+                                        SDL_strlen(resume_label));
+    if (snake->text_resume == NULL) {
+        SDL_Log("Failed to create resume text object: %s", SDL_GetError());
+        goto fail;
+    }
+
+    if (TTF_SetTextColor(snake->text_resume, 20, 20, 20, 255) == false) {
+        SDL_Log("Failed to set resume text color: %s", SDL_GetError());
+        goto fail;
+    }
+
     if (reset(snake) == false) {
         SDL_Log("Failed to initialize game state");
         goto fail;
@@ -205,6 +298,16 @@ void snake_destroy(snake_t* snake) {
     if (snake->text_score != NULL) {
         TTF_DestroyText(snake->text_score);
         snake->text_score = NULL;
+    }
+
+    if (snake->text_pause != NULL) {
+        TTF_DestroyText(snake->text_pause);
+        snake->text_pause = NULL;
+    }
+
+    if (snake->text_resume != NULL) {
+        TTF_DestroyText(snake->text_resume);
+        snake->text_resume = NULL;
     }
 
     audio_manager_destroy(&snake->audio);
@@ -469,9 +572,44 @@ void snake_handle_events(snake_t* snake) {
         if (event.type == SDL_EVENT_KEY_DOWN) {
             if (event.key.scancode == SDL_SCANCODE_ESCAPE && event.key.repeat == 0) {
                 snake->is_paused = !snake->is_paused;
+                if (update_pause_text(snake) == false) {
+                    snake->window.is_running = false;
+                }
             }
 
             handle_movement_keys(snake, event.key.scancode);
+        }
+
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && snake->is_paused == true &&
+            event.button.button == SDL_BUTTON_LEFT && event.button.down == true) {
+            vector2i_t screen_size;
+            if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
+                SDL_Log("Failed to query render output size: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+
+            vector2i_t pause_text_size;
+            if (TTF_GetTextSize(snake->text_pause, &pause_text_size.x, &pause_text_size.y) == false) {
+                SDL_Log("Failed to measure pause text: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+
+            vector2i_t resume_text_size;
+            if (TTF_GetTextSize(snake->text_resume, &resume_text_size.x, &resume_text_size.y) == false) {
+                SDL_Log("Failed to measure resume text: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+
+            SDL_FRect panel_rect;
+            SDL_FRect button_rect;
+            compute_pause_layout(&screen_size, &pause_text_size, &resume_text_size, &panel_rect, &button_rect);
+
+            if (is_point_inside_rect(event.button.x, event.button.y, &button_rect) == true) {
+                snake->is_paused = false;
+            }
         }
     }
 }
@@ -524,6 +662,72 @@ void snake_render_frame(snake_t* snake) {
         SDL_Log("Failed to render score text: %s", SDL_GetError());
         snake->window.is_running = false;
         return;
+    }
+
+    if (snake->is_paused == true) {
+        vector2i_t pause_text_size;
+        if (TTF_GetTextSize(snake->text_pause, &pause_text_size.x, &pause_text_size.y) == false) {
+            SDL_Log("Failed to measure pause text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        vector2i_t resume_text_size;
+        if (TTF_GetTextSize(snake->text_resume, &resume_text_size.x, &resume_text_size.y) == false) {
+            SDL_Log("Failed to measure resume text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        SDL_FRect panel_rect;
+        SDL_FRect button_rect;
+        compute_pause_layout(&screen_size, &pause_text_size, &resume_text_size, &panel_rect, &button_rect);
+
+        if (SDL_SetRenderDrawBlendMode(snake->window.sdl_renderer, SDL_BLENDMODE_BLEND) == false) {
+            SDL_Log("Failed to set blend mode: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_overlay.r, k_color_pause_overlay.g,
+                               k_color_pause_overlay.b, k_color_pause_overlay.a);
+
+        SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size.x, (float)screen_size.y};
+        SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
+
+        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_panel.r, k_color_pause_panel.g,
+                               k_color_pause_panel.b, k_color_pause_panel.a);
+        SDL_RenderFillRect(snake->window.sdl_renderer, &panel_rect);
+
+        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_button.r, k_color_pause_button.g,
+                               k_color_pause_button.b, k_color_pause_button.a);
+        SDL_RenderFillRect(snake->window.sdl_renderer, &button_rect);
+
+        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_button_border.r, k_color_pause_button_border.g,
+                               k_color_pause_button_border.b, k_color_pause_button_border.a);
+        SDL_RenderRect(snake->window.sdl_renderer, &button_rect);
+
+        const float pause_text_x = panel_rect.x + (panel_rect.w - (float)pause_text_size.x) * 0.5f;
+        const float pause_text_y = panel_rect.y + k_pause_panel_padding;
+        if (TTF_DrawRendererText(snake->text_pause, pause_text_x, pause_text_y) == false) {
+            SDL_Log("Failed to render pause text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        const float resume_text_x = button_rect.x + (button_rect.w - (float)resume_text_size.x) * 0.5f;
+        const float resume_text_y = button_rect.y + (button_rect.h - (float)resume_text_size.y) * 0.5f;
+        if (TTF_DrawRendererText(snake->text_resume, resume_text_x, resume_text_y) == false) {
+            SDL_Log("Failed to render resume text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        if (SDL_SetRenderDrawBlendMode(snake->window.sdl_renderer, SDL_BLENDMODE_NONE) == false) {
+            SDL_Log("Failed to reset blend mode: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
     }
 
     SDL_RenderPresent(snake->window.sdl_renderer);

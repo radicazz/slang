@@ -18,12 +18,7 @@ typedef enum {
     SNAKE_DIRECTION_RIGHT
 } snake_direction_t;
 
-typedef enum {
-    SNAKE_CELL_EMPTY,
-    SNAKE_CELL_WALL,
-    SNAKE_CELL_FOOD,
-    SNAKE_CELL_SNAKE
-} snake_cell_state_t;
+typedef enum { SNAKE_CELL_EMPTY, SNAKE_CELL_WALL, SNAKE_CELL_FOOD, SNAKE_CELL_SNAKE } snake_cell_state_t;
 
 typedef struct {
     vector2i_t position;
@@ -50,6 +45,11 @@ typedef struct {
 
     TTF_Text* text_score;
     char text_score_buffer[32];
+
+    TTF_Text* text_pause;
+    char text_pause_buffer[32];
+
+    TTF_Text* text_resume;
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);
