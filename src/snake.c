@@ -362,7 +362,9 @@ static void update_snake_gradient(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     const Uint8 head_green = 255;
-    const Uint8 tail_green = 180;
+    const Uint8 tail_green = 120;
+    const float knee = 0.3f;
+    const float knee_weight = 0.7f;
 
     snake_cell_t* const head_cell = &snake->cells[snake->position_head.x][snake->position_head.y];
     head_cell->color = SNAKE_COLOR_GREEN;
@@ -384,7 +386,14 @@ static void update_snake_gradient(snake_t* snake) {
         snake_cell_t* const cell = &snake->cells[body_position->x][body_position->y];
 
         const float t = (float)(i + 1) / length;
-        float green_value = start + (end - start) * t;
+        float eased_t;
+        if (t <= knee) {
+            eased_t = (t / knee) * knee_weight;
+        } else {
+            eased_t = knee_weight + ((t - knee) / (1.0f - knee)) * (1.0f - knee_weight);
+        }
+
+        float green_value = start + (end - start) * eased_t;
         if (green_value < 0.f) {
             green_value = 0.f;
         } else if (green_value > 255.f) {
