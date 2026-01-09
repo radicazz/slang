@@ -358,6 +358,47 @@ static void move_head_and_body(snake_t* snake) {
     }
 }
 
+static void update_snake_gradient(snake_t* snake) {
+    SDL_assert(snake != NULL);
+
+    const Uint8 head_green = 255;
+    const Uint8 tail_green = 180;
+
+    snake_cell_t* const head_cell = &snake->cells[snake->position_head.x][snake->position_head.y];
+    head_cell->color = SNAKE_COLOR_GREEN;
+    head_cell->render_color.r = 0;
+    head_cell->render_color.g = head_green;
+    head_cell->render_color.b = 0;
+    head_cell->render_color.a = 255;
+
+    if (snake->array_body.size == 0) {
+        return;
+    }
+
+    const float start = (float)head_green;
+    const float end = (float)tail_green;
+    const float length = (float)snake->array_body.size;
+
+    for (size_t i = 0; i < snake->array_body.size; ++i) {
+        vector2i_t* const body_position = (vector2i_t* const)dynamic_array_get(&snake->array_body, i);
+        snake_cell_t* const cell = &snake->cells[body_position->x][body_position->y];
+
+        const float t = (float)(i + 1) / length;
+        float green_value = start + (end - start) * t;
+        if (green_value < 0.f) {
+            green_value = 0.f;
+        } else if (green_value > 255.f) {
+            green_value = 255.f;
+        }
+
+        cell->color = SNAKE_COLOR_DARK_GREEN;
+        cell->render_color.r = 0;
+        cell->render_color.g = (Uint8)(green_value + 0.5f);
+        cell->render_color.b = 0;
+        cell->render_color.a = 255;
+    }
+}
+
 bool test_body_collision(snake_t* snake) {
     SDL_assert(snake != NULL);
 
@@ -430,6 +471,8 @@ void snake_update_fixed(snake_t* snake) {
             snake->window.is_running = false;
         }
     }
+
+    update_snake_gradient(snake);
 }
 
 void snake_handle_events(snake_t* snake) {
@@ -468,23 +511,11 @@ void snake_render_frame(snake_t* snake) {
             const snake_cell_t* const cell = &snake->cells[x][y];
 
             // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
-            switch (cell->color) {
-                case SNAKE_COLOR_BLACK:
-                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 0, 0, 255);
-                    break;
-                case SNAKE_COLOR_GRAY:
-                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 50, 50, 50, 255);
-                    break;
-                case SNAKE_COLOR_GREEN:
-                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 255, 0, 255);
-                    break;
-                case SNAKE_COLOR_DARK_GREEN:
-                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 180, 0, 255);
-                    break;
-                case SNAKE_COLOR_RED:
-                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 255, 0, 0, 255);
-                    break;
-            }
+            SDL_SetRenderDrawColor(snake->window.sdl_renderer,
+                                   cell->render_color.r,
+                                   cell->render_color.g,
+                                   cell->render_color.b,
+                                   cell->render_color.a);
 
             SDL_FRect rect;
             rect.x = (float)(cell->position.x * SNAKE_CELL_SIZE);
