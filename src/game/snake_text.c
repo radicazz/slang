@@ -1,5 +1,6 @@
 #include "snake_text.h"
 
+#include <stdio.h>
 #include <SDL3/SDL_log.h>
 
 bool snake_text_create(snake_t* snake) {
