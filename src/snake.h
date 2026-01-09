@@ -19,16 +19,15 @@ typedef enum {
 } snake_direction_t;
 
 typedef enum {
-    SNAKE_COLOR_BLACK,
-    SNAKE_COLOR_GRAY,
-    SNAKE_COLOR_GREEN,
-    SNAKE_COLOR_DARK_GREEN,
-    SNAKE_COLOR_RED
-} snake_colors_t;
+    SNAKE_CELL_EMPTY,
+    SNAKE_CELL_WALL,
+    SNAKE_CELL_FOOD,
+    SNAKE_CELL_SNAKE
+} snake_cell_state_t;
 
 typedef struct {
     vector2i_t position;
-    snake_colors_t color;
+    snake_cell_state_t state;
     SDL_Color render_color;
 } snake_cell_t;
 

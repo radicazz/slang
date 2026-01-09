@@ -6,6 +6,11 @@
 #include <string.h>
 #include <SDL3/SDL_log.h>
 
+static const SDL_Color k_color_empty = {0, 0, 0, 255};
+static const SDL_Color k_color_wall = {50, 50, 50, 255};
+static const SDL_Color k_color_food = {255, 0, 0, 255};
+static const SDL_Color k_color_snake_head = {0, 255, 0, 255};
+
 static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) {
     SDL_assert(snake != NULL);
     SDL_assert(out_position != NULL);
@@ -18,7 +23,7 @@ static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) 
     for (int attempt = 0; attempt < max_attempts; ++attempt) {
         vector2i_random(&position, interior_width, interior_height);
         snake_cell_t* cell = &snake->cells[position.x][position.y];
-        if (cell->color == SNAKE_COLOR_BLACK) {
+        if (cell->state == SNAKE_CELL_EMPTY) {
             *out_position = position;
             return true;
         }
@@ -26,7 +31,7 @@ static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) 
 
     for (int x = 1; x < SNAKE_GRID_X - 1; ++x) {
         for (int y = 1; y < SNAKE_GRID_Y - 1; ++y) {
-            if (snake->cells[x][y].color == SNAKE_COLOR_BLACK) {
+            if (snake->cells[x][y].state == SNAKE_CELL_EMPTY) {
                 vector2i_set(out_position, x, y);
                 return true;
             }
@@ -37,47 +42,16 @@ static bool get_random_empty_position(snake_t* snake, vector2i_t* out_position) 
     return false;
 }
 
-static SDL_Color color_to_render_color(snake_colors_t color) {
-    SDL_Color render_color = {0, 0, 0, 255};
-
-    switch (color) {
-        case SNAKE_COLOR_BLACK:
-            render_color.r = 0;
-            render_color.g = 0;
-            render_color.b = 0;
-            break;
-        case SNAKE_COLOR_GRAY:
-            render_color.r = 50;
-            render_color.g = 50;
-            render_color.b = 50;
-            break;
-        case SNAKE_COLOR_GREEN:
-            render_color.r = 0;
-            render_color.g = 255;
-            render_color.b = 0;
-            break;
-        case SNAKE_COLOR_DARK_GREEN:
-            render_color.r = 0;
-            render_color.g = 180;
-            render_color.b = 0;
-            break;
-        case SNAKE_COLOR_RED:
-            render_color.r = 255;
-            render_color.g = 0;
-            render_color.b = 0;
-            break;
-    }
-
-    return render_color;
-}
-
-static void cell_set_color(snake_t* snake, const vector2i_t* position, snake_colors_t color) {
+static void cell_set_state_and_color(snake_t* snake, const vector2i_t* position, snake_cell_state_t state,
+                                     const SDL_Color* color) {
     SDL_assert(snake != NULL);
     SDL_assert(position != NULL);
 
     snake_cell_t* const cell = &snake->cells[position->x][position->y];
-    cell->color = color;
-    cell->render_color = color_to_render_color(color);
+    cell->state = state;
+    if (color != NULL) {
+        cell->render_color = *color;
+    }
 }
 
 static bool update_score_text(snake_t* snake) {
@@ -118,9 +92,9 @@ static bool reset(snake_t* snake) {
 
             // Set the border cells to gray and the rest to black.
             if (x == 0 || x == SNAKE_GRID_X - 1 || y == 0 || y == SNAKE_GRID_Y - 1) {
-                cell_set_color(snake, &cell->position, SNAKE_COLOR_GRAY);
+                cell_set_state_and_color(snake, &cell->position, SNAKE_CELL_WALL, &k_color_wall);
             } else {
-                cell_set_color(snake, &cell->position, SNAKE_COLOR_BLACK);
+                cell_set_state_and_color(snake, &cell->position, SNAKE_CELL_EMPTY, &k_color_empty);
             }
         }
     }
@@ -132,7 +106,7 @@ static bool reset(snake_t* snake) {
     }
 
     snake->position_head = head_position;
-    cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
+    cell_set_state_and_color(snake, &snake->position_head, SNAKE_CELL_SNAKE, &k_color_snake_head);
     snake->previous_position_head = snake->position_head;
     snake->previous_position_tail = snake->position_head;
     snake->current_direction = SNAKE_DIRECTION_UP;
@@ -146,7 +120,7 @@ static bool reset(snake_t* snake) {
         }
 
         dynamic_array_append(&snake->array_food, &food_position);
-        cell_set_color(snake, &food_position, SNAKE_COLOR_RED);
+        cell_set_state_and_color(snake, &food_position, SNAKE_CELL_FOOD, &k_color_food);
     }
 
     dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
@@ -194,8 +168,7 @@ bool snake_create(snake_t* snake, const char* title) {
     dynamic_array_init(&snake->array_food);
     dynamic_array_init(&snake->array_body);
 
-    const int written =
-        snprintf(snake->text_score_buffer, sizeof(snake->text_score_buffer), "Score: 0");
+    const int written = snprintf(snake->text_score_buffer, sizeof(snake->text_score_buffer), "Score: 0");
     if (written < 0 || (size_t)written >= sizeof(snake->text_score_buffer)) {
         SDL_Log("Failed to format initial score text");
         goto fail;
@@ -330,11 +303,11 @@ static void move_head_and_body(snake_t* snake) {
 
     // Move the snake's head.
     snake->position_head = new_head_position;
-    cell_set_color(snake, &snake->position_head, SNAKE_COLOR_GREEN);
+    cell_set_state_and_color(snake, &snake->position_head, SNAKE_CELL_SNAKE, &k_color_snake_head);
 
     if (dynamic_array_is_empty(&snake->array_body) == true) {
         // Snake has no array_body, so clear the previous head position.
-        cell_set_color(snake, &snake->previous_position_head, SNAKE_COLOR_BLACK);
+        cell_set_state_and_color(snake, &snake->previous_position_head, SNAKE_CELL_EMPTY, &k_color_empty);
     } else {
         vector2i_set(&snake->previous_position_tail, 0, 0);
 
@@ -352,8 +325,8 @@ static void move_head_and_body(snake_t* snake) {
                 *current_body_position = saved_position;
             }
 
-            cell_set_color(snake, current_body_position, SNAKE_COLOR_DARK_GREEN);
-            cell_set_color(snake, &snake->previous_position_tail, SNAKE_COLOR_BLACK);
+            cell_set_state_and_color(snake, current_body_position, SNAKE_CELL_SNAKE, NULL);
+            cell_set_state_and_color(snake, &snake->previous_position_tail, SNAKE_CELL_EMPTY, &k_color_empty);
         }
     }
 }
@@ -367,7 +340,7 @@ static void update_snake_gradient(snake_t* snake) {
     const float knee_weight = 0.7f;
 
     snake_cell_t* const head_cell = &snake->cells[snake->position_head.x][snake->position_head.y];
-    head_cell->color = SNAKE_COLOR_GREEN;
+    head_cell->state = SNAKE_CELL_SNAKE;
     head_cell->render_color.r = 0;
     head_cell->render_color.g = head_green;
     head_cell->render_color.b = 0;
@@ -400,7 +373,7 @@ static void update_snake_gradient(snake_t* snake) {
             green_value = 255.f;
         }
 
-        cell->color = SNAKE_COLOR_DARK_GREEN;
+        cell->state = SNAKE_CELL_SNAKE;
         cell->render_color.r = 0;
         cell->render_color.g = (Uint8)(green_value + 0.5f);
         cell->render_color.b = 0;
@@ -434,7 +407,7 @@ static bool test_food_collision(snake_t* snake) {
             vector2i_t new_food_position;
             if (get_random_empty_position(snake, &new_food_position) == true) {
                 dynamic_array_append(&snake->array_food, &new_food_position);
-                cell_set_color(snake, &new_food_position, SNAKE_COLOR_RED);
+                cell_set_state_and_color(snake, &new_food_position, SNAKE_CELL_FOOD, &k_color_food);
             }
 
             return true;
@@ -520,11 +493,8 @@ void snake_render_frame(snake_t* snake) {
             const snake_cell_t* const cell = &snake->cells[x][y];
 
             // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
-            SDL_SetRenderDrawColor(snake->window.sdl_renderer,
-                                   cell->render_color.r,
-                                   cell->render_color.g,
-                                   cell->render_color.b,
-                                   cell->render_color.a);
+            SDL_SetRenderDrawColor(snake->window.sdl_renderer, cell->render_color.r, cell->render_color.g,
+                                   cell->render_color.b, cell->render_color.a);
 
             SDL_FRect rect;
             rect.x = (float)(cell->position.x * SNAKE_CELL_SIZE);
