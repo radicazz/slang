@@ -1,4 +1,5 @@
 #include "snake.h"
+#include "game_ui.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -112,8 +113,12 @@ static void compute_pause_layout(const vector2i_t* screen_size, const vector2i_t
     SDL_assert(out_panel_rect != NULL);
     SDL_assert(out_button_rect != NULL);
 
-    const float button_width = (float)resume_text_size->x + k_pause_button_padding_x * 2.f;
-    const float button_height = (float)resume_text_size->y + k_pause_button_padding_y * 2.f;
+    game_ui_button_t button;
+    game_ui_button_init(&button, k_color_pause_button, k_color_pause_button_border);
+    game_ui_button_layout_from_label(&button, resume_text_size, 0.f, 0.f, k_pause_button_padding_x,
+                                     k_pause_button_padding_y);
+    const float button_width = button.rect.w;
+    const float button_height = button.rect.h;
 
     const float panel_width = SDL_max((float)pause_text_size->x, button_width) + k_pause_panel_padding * 2.f;
     const float panel_height =
@@ -124,15 +129,12 @@ static void compute_pause_layout(const vector2i_t* screen_size, const vector2i_t
     out_panel_rect->w = panel_width;
     out_panel_rect->h = panel_height;
 
-    out_button_rect->w = button_width;
-    out_button_rect->h = button_height;
-    out_button_rect->x = out_panel_rect->x + (panel_width - button_width) * 0.5f;
-    out_button_rect->y = out_panel_rect->y + k_pause_panel_padding + (float)pause_text_size->y + k_pause_text_gap;
-}
-
-static bool is_point_inside_rect(float x, float y, const SDL_FRect* rect) {
-    SDL_assert(rect != NULL);
-    return x >= rect->x && x <= rect->x + rect->w && y >= rect->y && y <= rect->y + rect->h;
+    const float button_center_x = out_panel_rect->x + panel_width * 0.5f;
+    const float button_center_y =
+        out_panel_rect->y + k_pause_panel_padding + (float)pause_text_size->y + k_pause_text_gap + button_height * 0.5f;
+    game_ui_button_layout_from_label(&button, resume_text_size, button_center_x, button_center_y,
+                                     k_pause_button_padding_x, k_pause_button_padding_y);
+    *out_button_rect = button.rect;
 }
 
 static bool reset(snake_t* snake) {
@@ -607,7 +609,11 @@ void snake_handle_events(snake_t* snake) {
             SDL_FRect button_rect;
             compute_pause_layout(&screen_size, &pause_text_size, &resume_text_size, &panel_rect, &button_rect);
 
-            if (is_point_inside_rect(event.button.x, event.button.y, &button_rect) == true) {
+            game_ui_button_t button;
+            game_ui_button_init(&button, k_color_pause_button, k_color_pause_button_border);
+            button.rect = button_rect;
+
+            if (game_ui_button_contains(&button, event.button.x, event.button.y) == true) {
                 snake->is_paused = false;
             }
         }
@@ -699,13 +705,14 @@ void snake_render_frame(snake_t* snake) {
                                k_color_pause_panel.b, k_color_pause_panel.a);
         SDL_RenderFillRect(snake->window.sdl_renderer, &panel_rect);
 
-        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_button.r, k_color_pause_button.g,
-                               k_color_pause_button.b, k_color_pause_button.a);
-        SDL_RenderFillRect(snake->window.sdl_renderer, &button_rect);
-
-        SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_pause_button_border.r, k_color_pause_button_border.g,
-                               k_color_pause_button_border.b, k_color_pause_button_border.a);
-        SDL_RenderRect(snake->window.sdl_renderer, &button_rect);
+        game_ui_button_t button;
+        game_ui_button_init(&button, k_color_pause_button, k_color_pause_button_border);
+        button.rect = button_rect;
+        if (game_ui_button_render(snake->window.sdl_renderer, &button) == false) {
+            SDL_Log("Failed to render pause button: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
 
         const float pause_text_x = panel_rect.x + (panel_rect.w - (float)pause_text_size.x) * 0.5f;
         const float pause_text_y = panel_rect.y + k_pause_panel_padding;
@@ -715,8 +722,9 @@ void snake_render_frame(snake_t* snake) {
             return;
         }
 
-        const float resume_text_x = button_rect.x + (button_rect.w - (float)resume_text_size.x) * 0.5f;
-        const float resume_text_y = button_rect.y + (button_rect.h - (float)resume_text_size.y) * 0.5f;
+        float resume_text_x = 0.f;
+        float resume_text_y = 0.f;
+        game_ui_button_get_label_position(&button, &resume_text_size, &resume_text_x, &resume_text_y);
         if (TTF_DrawRendererText(snake->text_resume, resume_text_x, resume_text_y) == false) {
             SDL_Log("Failed to render resume text: %s", SDL_GetError());
             snake->window.is_running = false;
