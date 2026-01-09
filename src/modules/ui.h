@@ -12,6 +12,12 @@ typedef struct {
     SDL_Color border_color;
 } ui_button_t;
 
+typedef struct {
+    SDL_FRect rect;
+    SDL_Color fill_color;
+    SDL_Color border_color;
+} ui_panel_t;
+
 /**
  * @brief Initialize a button with colors and zeroed geometry.
  *
@@ -62,5 +68,35 @@ bool ui_button_contains(const ui_button_t* button, float x, float y);
  * @return true if rendering succeeded, false otherwise.
  */
 bool ui_button_render(SDL_Renderer* renderer, const ui_button_t* button);
+
+/**
+ * @brief Initialize a panel with colors and zeroed geometry.
+ *
+ * @param panel Panel to initialize.
+ * @param fill_color Fill color for the panel body.
+ * @param border_color Border color for the panel outline.
+ */
+void ui_panel_init(ui_panel_t* panel, SDL_Color fill_color, SDL_Color border_color);
+
+/**
+ * @brief Size and center a panel based on content size and padding.
+ *
+ * @param panel Panel to size and position.
+ * @param screen_size Screen size in pixels.
+ * @param content_size Content size in pixels.
+ * @param padding_x Horizontal padding around the content.
+ * @param padding_y Vertical padding around the content.
+ */
+void ui_panel_layout_from_content(ui_panel_t* panel, const vector2i_t* screen_size, const vector2i_t* content_size,
+                                  float padding_x, float padding_y);
+
+/**
+ * @brief Render the panel body and optional border.
+ *
+ * @param renderer SDL renderer to draw with.
+ * @param panel Panel to draw.
+ * @return true if rendering succeeded, false otherwise.
+ */
+bool ui_panel_render(SDL_Renderer* renderer, const ui_panel_t* panel);
 
 #endif  // UI_H

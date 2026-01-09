@@ -56,3 +56,49 @@ bool ui_button_render(SDL_Renderer* renderer, const ui_button_t* button) {
 
     return true;
 }
+
+void ui_panel_init(ui_panel_t* panel, SDL_Color fill_color, SDL_Color border_color) {
+    SDL_assert(panel != NULL);
+
+    panel->rect.x = 0.f;
+    panel->rect.y = 0.f;
+    panel->rect.w = 0.f;
+    panel->rect.h = 0.f;
+    panel->fill_color = fill_color;
+    panel->border_color = border_color;
+}
+
+void ui_panel_layout_from_content(ui_panel_t* panel, const vector2i_t* screen_size, const vector2i_t* content_size,
+                                  float padding_x, float padding_y) {
+    SDL_assert(panel != NULL);
+    SDL_assert(screen_size != NULL);
+    SDL_assert(content_size != NULL);
+
+    panel->rect.w = (float)content_size->x + padding_x * 2.f;
+    panel->rect.h = (float)content_size->y + padding_y * 2.f;
+    panel->rect.x = ((float)screen_size->x - panel->rect.w) * 0.5f;
+    panel->rect.y = ((float)screen_size->y - panel->rect.h) * 0.5f;
+}
+
+bool ui_panel_render(SDL_Renderer* renderer, const ui_panel_t* panel) {
+    SDL_assert(renderer != NULL);
+    SDL_assert(panel != NULL);
+
+    SDL_SetRenderDrawColor(renderer, panel->fill_color.r, panel->fill_color.g, panel->fill_color.b,
+                           panel->fill_color.a);
+    if (SDL_RenderFillRect(renderer, &panel->rect) == false) {
+        return false;
+    }
+
+    if (panel->border_color.a == 0) {
+        return true;
+    }
+
+    SDL_SetRenderDrawColor(renderer, panel->border_color.r, panel->border_color.g, panel->border_color.b,
+                           panel->border_color.a);
+    if (SDL_RenderRect(renderer, &panel->rect) == false) {
+        return false;
+    }
+
+    return true;
+}
