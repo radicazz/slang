@@ -2,6 +2,7 @@
 #define SNAKE_H
 
 #include "modules/window.h"
+#include "modules/window_frame.h"
 #include "modules/audio.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
@@ -36,6 +37,7 @@ typedef struct {
 
 typedef struct {
     window_t window;
+    window_frame_t window_frame;
     audio_manager_t audio;
 
     snake_game_state_t state;

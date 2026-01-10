@@ -179,5 +179,11 @@ void snake_render_frame(snake_t* snake) {
         }
     }
 
+    if (window_frame_render(&snake->window, &snake->window_frame) == false) {
+        SDL_Log("Failed to render custom window frame");
+        snake->window.is_running = false;
+        return;
+    }
+
     SDL_RenderPresent(snake->window.sdl_renderer);
 }

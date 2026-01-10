@@ -12,6 +12,10 @@ void snake_handle_events(snake_t* snake) {
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
+        if (window_frame_handle_event(&snake->window, &snake->window_frame, &event) == true) {
+            continue;
+        }
+
         if (event.type == SDL_EVENT_QUIT) {
             snake->window.is_running = false;
         }

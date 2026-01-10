@@ -20,6 +20,8 @@ bool snake_create(snake_t* snake, const char* title) {
         return false;
     }
 
+    window_frame_init(&snake->window_frame);
+
     if (audio_manager_create(&snake->audio) == false) {
         SDL_Log("Warning: Failed to initialize audio, continuing without sound");
     } else {
