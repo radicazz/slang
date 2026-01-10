@@ -17,23 +17,10 @@ typedef struct {
     SDL_FRect border_rect;
 } window_frame_layout_t;
 
-static bool window_frame_point_in_rect(const SDL_FRect* rect, float x, float y) {
-    if (rect == NULL) {
-        return false;
-    }
-
-    return x >= rect->x && x <= (rect->x + rect->w) && y >= rect->y && y <= (rect->y + rect->h);
-}
-
-static bool window_frame_get_layout(window_t* window, window_frame_layout_t* layout) {
-    SDL_assert(window != NULL);
+static bool window_frame_layout_from_size(int width, int height, window_frame_layout_t* layout) {
     SDL_assert(layout != NULL);
-    SDL_assert(window->sdl_window != NULL);
 
-    int width = 0;
-    int height = 0;
-    if (SDL_GetWindowSize(window->sdl_window, &width, &height) == false) {
-        SDL_Log("Failed to query window size for custom frame: %s", SDL_GetError());
+    if (width <= 0 || height <= 0) {
         return false;
     }
 
@@ -55,11 +42,66 @@ static bool window_frame_get_layout(window_t* window, window_frame_layout_t* lay
     return true;
 }
 
+static bool window_frame_point_in_rect(const SDL_FRect* rect, float x, float y) {
+    if (rect == NULL) {
+        return false;
+    }
+
+    return x >= rect->x && x <= (rect->x + rect->w) && y >= rect->y && y <= (rect->y + rect->h);
+}
+
+static bool window_frame_get_layout(window_t* window, window_frame_layout_t* layout) {
+    SDL_assert(window != NULL);
+    SDL_assert(layout != NULL);
+    SDL_assert(window->sdl_window != NULL);
+
+    int width = 0;
+    int height = 0;
+    if (SDL_GetWindowSize(window->sdl_window, &width, &height) == false) {
+        SDL_Log("Failed to query window size for custom frame: %s", SDL_GetError());
+        return false;
+    }
+
+    return window_frame_layout_from_size(width, height, layout);
+}
+
+static SDL_HitTestResult SDLCALL window_frame_hit_test(SDL_Window* win, const SDL_Point* area, void* data) {
+    window_frame_t* frame = (window_frame_t*)data;
+    if (frame == NULL || frame->enabled == false || win == NULL || area == NULL) {
+        return SDL_HITTEST_NORMAL;
+    }
+
+    int width = 0;
+    int height = 0;
+    if (SDL_GetWindowSize(win, &width, &height) == false) {
+        return SDL_HITTEST_NORMAL;
+    }
+
+    window_frame_layout_t layout;
+    if (window_frame_layout_from_size(width, height, &layout) == false) {
+        return SDL_HITTEST_NORMAL;
+    }
+
+    const float x = (float)area->x;
+    const float y = (float)area->y;
+    if (window_frame_point_in_rect(&layout.close_rect, x, y) == true) {
+        return SDL_HITTEST_NORMAL;
+    }
+
+    if (window_frame_point_in_rect(&layout.titlebar_rect, x, y) == true) {
+        return SDL_HITTEST_DRAGGABLE;
+    }
+
+    return SDL_HITTEST_NORMAL;
+}
+
 void window_frame_init(window_frame_t* frame) {
     SDL_assert(frame != NULL);
 
     frame->enabled = false;
     frame->dragging = false;
+    frame->use_hit_test = false;
+    frame->allow_manual_drag = true;
     vector2i_set(&frame->drag_mouse_start, 0, 0);
     vector2i_set(&frame->drag_window_start, 0, 0);
 }
@@ -80,6 +122,19 @@ bool window_frame_enable(window_t* window, window_frame_t* frame, bool enable) {
 
     frame->enabled = enable;
     frame->dragging = false;
+    frame->allow_manual_drag = true;
+    if (enable == true) {
+        if (SDL_SetWindowHitTest(window->sdl_window, window_frame_hit_test, frame) == false) {
+            SDL_Log("Warning: Failed to enable hit-testing for custom frame: %s", SDL_GetError());
+            frame->use_hit_test = false;
+        } else {
+            frame->use_hit_test = true;
+        }
+    } else {
+        SDL_SetWindowHitTest(window->sdl_window, NULL, NULL);
+        frame->use_hit_test = false;
+    }
+
     return true;
 }
 
@@ -109,6 +164,10 @@ bool window_frame_handle_event(window_t* window, window_frame_t* frame, const SD
             return true;
         }
 
+        if (frame->use_hit_test == true) {
+            return false;
+        }
+
         if (window_frame_point_in_rect(&layout.titlebar_rect, event->button.x, event->button.y) == true) {
             int window_x = 0;
             int window_y = 0;
@@ -131,7 +190,7 @@ bool window_frame_handle_event(window_t* window, window_frame_t* frame, const SD
         }
     }
 
-    if (event->type == SDL_EVENT_MOUSE_MOTION && frame->dragging == true) {
+    if (event->type == SDL_EVENT_MOUSE_MOTION && frame->dragging == true && frame->allow_manual_drag == true) {
         int delta_x = (int)event->motion.x - frame->drag_mouse_start.x;
         int delta_y = (int)event->motion.y - frame->drag_mouse_start.y;
         int target_x = frame->drag_window_start.x + delta_x;
@@ -139,6 +198,7 @@ bool window_frame_handle_event(window_t* window, window_frame_t* frame, const SD
         if (SDL_SetWindowPosition(window->sdl_window, target_x, target_y) == false) {
             SDL_Log("Failed to update window position: %s", SDL_GetError());
             frame->dragging = false;
+            frame->allow_manual_drag = false;
         }
         return true;
     }

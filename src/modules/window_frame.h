@@ -14,6 +14,8 @@
 typedef struct {
     bool enabled;
     bool dragging;
+    bool use_hit_test;
+    bool allow_manual_drag;
     vector2i_t drag_mouse_start;
     vector2i_t drag_window_start;
 } window_frame_t;
