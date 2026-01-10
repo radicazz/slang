@@ -18,6 +18,13 @@ typedef struct {
     SDL_Color border_color;
 } ui_panel_t;
 
+typedef struct {
+    SDL_FRect rect;
+    SDL_Color fill_color;
+    SDL_Color border_color;
+    SDL_Color check_color;
+} ui_checkbox_t;
+
 /**
  * @brief Initialize a button with colors and zeroed geometry.
  *
@@ -98,5 +105,45 @@ void ui_panel_layout_from_content(ui_panel_t* panel, const vector2i_t* screen_si
  * @return true if rendering succeeded, false otherwise.
  */
 bool ui_panel_render(SDL_Renderer* renderer, const ui_panel_t* panel);
+
+/**
+ * @brief Initialize a checkbox with colors and zeroed geometry.
+ *
+ * @param checkbox Checkbox to initialize.
+ * @param fill_color Fill color for the checkbox body.
+ * @param border_color Border color for the checkbox outline.
+ * @param check_color Fill color for the check indicator.
+ */
+void ui_checkbox_init(ui_checkbox_t* checkbox, SDL_Color fill_color, SDL_Color border_color, SDL_Color check_color);
+
+/**
+ * @brief Size and position a checkbox based on a square size.
+ *
+ * @param checkbox Checkbox to size and position.
+ * @param center_x Desired center X in pixels.
+ * @param center_y Desired center Y in pixels.
+ * @param size Side length of the checkbox in pixels.
+ */
+void ui_checkbox_layout(ui_checkbox_t* checkbox, float center_x, float center_y, float size);
+
+/**
+ * @brief Test whether a point lies inside a checkbox's rectangle.
+ *
+ * @param checkbox Checkbox to test.
+ * @param x Point X coordinate.
+ * @param y Point Y coordinate.
+ * @return true if the point is inside the checkbox rectangle, false otherwise.
+ */
+bool ui_checkbox_contains(const ui_checkbox_t* checkbox, float x, float y);
+
+/**
+ * @brief Render the checkbox body, border, and optional check indicator.
+ *
+ * @param renderer SDL renderer to draw with.
+ * @param checkbox Checkbox to draw.
+ * @param is_checked Whether to render the check indicator.
+ * @return true if rendering succeeded, false otherwise.
+ */
+bool ui_checkbox_render(SDL_Renderer* renderer, const ui_checkbox_t* checkbox, bool is_checked);
 
 #endif  // UI_H

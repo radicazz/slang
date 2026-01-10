@@ -102,3 +102,72 @@ bool ui_panel_render(SDL_Renderer* renderer, const ui_panel_t* panel) {
 
     return true;
 }
+
+void ui_checkbox_init(ui_checkbox_t* checkbox, SDL_Color fill_color, SDL_Color border_color, SDL_Color check_color) {
+    SDL_assert(checkbox != NULL);
+
+    checkbox->rect.x = 0.f;
+    checkbox->rect.y = 0.f;
+    checkbox->rect.w = 0.f;
+    checkbox->rect.h = 0.f;
+    checkbox->fill_color = fill_color;
+    checkbox->border_color = border_color;
+    checkbox->check_color = check_color;
+}
+
+void ui_checkbox_layout(ui_checkbox_t* checkbox, float center_x, float center_y, float size) {
+    SDL_assert(checkbox != NULL);
+
+    checkbox->rect.w = size;
+    checkbox->rect.h = size;
+    checkbox->rect.x = center_x - size * 0.5f;
+    checkbox->rect.y = center_y - size * 0.5f;
+}
+
+bool ui_checkbox_contains(const ui_checkbox_t* checkbox, float x, float y) {
+    SDL_assert(checkbox != NULL);
+    return x >= checkbox->rect.x && x <= checkbox->rect.x + checkbox->rect.w && y >= checkbox->rect.y &&
+           y <= checkbox->rect.y + checkbox->rect.h;
+}
+
+bool ui_checkbox_render(SDL_Renderer* renderer, const ui_checkbox_t* checkbox, bool is_checked) {
+    SDL_assert(renderer != NULL);
+    SDL_assert(checkbox != NULL);
+
+    SDL_SetRenderDrawColor(renderer, checkbox->fill_color.r, checkbox->fill_color.g, checkbox->fill_color.b,
+                           checkbox->fill_color.a);
+    if (SDL_RenderFillRect(renderer, &checkbox->rect) == false) {
+        return false;
+    }
+
+    SDL_SetRenderDrawColor(renderer, checkbox->border_color.r, checkbox->border_color.g, checkbox->border_color.b,
+                           checkbox->border_color.a);
+    if (SDL_RenderRect(renderer, &checkbox->rect) == false) {
+        return false;
+    }
+
+    if (is_checked == false) {
+        return true;
+    }
+
+    const float min_side = SDL_min(checkbox->rect.w, checkbox->rect.h);
+    const float inset = min_side * 0.2f;
+    SDL_FRect check_rect = {
+        checkbox->rect.x + inset,
+        checkbox->rect.y + inset,
+        checkbox->rect.w - inset * 2.f,
+        checkbox->rect.h - inset * 2.f,
+    };
+
+    if (check_rect.w <= 0.f || check_rect.h <= 0.f) {
+        return true;
+    }
+
+    SDL_SetRenderDrawColor(renderer, checkbox->check_color.r, checkbox->check_color.g, checkbox->check_color.b,
+                           checkbox->check_color.a);
+    if (SDL_RenderFillRect(renderer, &check_rect) == false) {
+        return false;
+    }
+
+    return true;
+}
