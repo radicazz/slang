@@ -8,9 +8,9 @@ My take on the classic snake game, built using C99, CMake and SDL3.
 
 <!-- markdownlint-disable MD033 -->
 <details>
-<summary>Screenshot</summary>
+<summary>Gameplay Example</summary>
 
-![Screenshot of slang game showing a snake made of green segments on a dark background with a red apple](data/example-screenshot.png)
+![GIF of slang game showing a snake made of green segments on a dark background with a red apple](data/gameplay-example.gif)
 
 </details>
 <!-- markdownlint-enable MD033 -->
