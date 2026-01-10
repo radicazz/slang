@@ -73,8 +73,11 @@ typedef struct {
     TTF_Text* text_resume_countdown;
     char text_resume_countdown_buffer[16];
 
-    TTF_Text* text_titlebar;
-    char text_titlebar_buffer[96];
+    TTF_Text* text_titlebar_label;
+    TTF_Text* text_titlebar_status;
+    TTF_Text* text_titlebar_status_compact;
+    char text_titlebar_status_buffer[64];
+    char text_titlebar_status_compact_buffer[48];
 
     Uint64 game_time_ms;
     int game_time_seconds;

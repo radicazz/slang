@@ -29,32 +29,91 @@ static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, 
 static bool render_titlebar_text(snake_t* snake, const vector2i_t* screen_size) {
     SDL_assert(snake != NULL);
     SDL_assert(screen_size != NULL);
-    SDL_assert(snake->text_titlebar != NULL);
 
-    vector2i_t text_size;
-    if (get_text_size(snake, snake->text_titlebar, &text_size, "title bar") == false) {
+    if (snake->window_frame.enabled == false) {
+        return true;
+    }
+
+    if (snake->text_titlebar_label == NULL || snake->text_titlebar_status == NULL ||
+        snake->text_titlebar_status_compact == NULL) {
+        SDL_Log("Title bar text resources are missing");
+        snake->window.is_running = false;
+        return false;
+    }
+
+    vector2i_t label_size;
+    if (get_text_size(snake, snake->text_titlebar_label, &label_size, "title bar label") == false) {
+        return false;
+    }
+
+    vector2i_t status_size;
+    if (get_text_size(snake, snake->text_titlebar_status, &status_size, "title bar status") == false) {
+        return false;
+    }
+
+    vector2i_t status_compact_size;
+    if (get_text_size(snake, snake->text_titlebar_status_compact, &status_compact_size, "title bar compact status") ==
+        false) {
         return false;
     }
 
     const float left_padding = (float)WINDOW_FRAME_PADDING;
     const float right_padding = (float)(WINDOW_FRAME_PADDING * 2 + WINDOW_FRAME_BUTTON_SIZE);
-    float x = left_padding;
     const float max_right = (float)screen_size->x - right_padding;
-    if ((float)text_size.x > (max_right - left_padding)) {
-        x = left_padding;
-    } else {
-        x = left_padding + (max_right - left_padding - (float)text_size.x) * 0.5f;
+    const float max_width = max_right - left_padding;
+    const float min_gap = 10.f;
+
+    TTF_Text* status_text = snake->text_titlebar_status;
+    vector2i_t status_text_size = status_size;
+
+    if ((float)status_size.x > max_width) {
+        status_text = snake->text_titlebar_status_compact;
+        status_text_size = status_compact_size;
     }
 
-    float y = ((float)WINDOW_FRAME_HEIGHT - (float)text_size.y) * 0.5f;
+    bool draw_label = true;
+    bool draw_status = true;
+
+    float status_x = max_right - (float)status_text_size.x;
+    if ((float)status_text_size.x > max_width) {
+        draw_status = false;
+    }
+
+    if (draw_status == true) {
+        const float label_right = left_padding + (float)label_size.x;
+        if (status_x < label_right + min_gap) {
+            draw_label = false;
+            status_x = left_padding + (max_width - (float)status_text_size.x) * 0.5f;
+            if (status_x < left_padding) {
+                status_x = left_padding;
+            }
+        }
+    }
+
+    const float text_y = ((float)WINDOW_FRAME_HEIGHT - (float)label_size.y) * 0.5f;
+    float y = text_y;
     if (y < 0.f) {
         y = 0.f;
     }
 
-    if (TTF_DrawRendererText(snake->text_titlebar, x, y) == false) {
-        SDL_Log("Failed to render title bar text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
+    if (draw_label == true) {
+        if (TTF_DrawRendererText(snake->text_titlebar_label, left_padding, y) == false) {
+            SDL_Log("Failed to render title bar label: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return false;
+        }
+    }
+
+    if (draw_status == true) {
+        float status_y = ((float)WINDOW_FRAME_HEIGHT - (float)status_text_size.y) * 0.5f;
+        if (status_y < 0.f) {
+            status_y = 0.f;
+        }
+        if (TTF_DrawRendererText(status_text, status_x, status_y) == false) {
+            SDL_Log("Failed to render title bar status: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return false;
+        }
     }
 
     return true;
@@ -96,18 +155,20 @@ void snake_render_frame(snake_t* snake) {
         return;
     }
 
-    vector2i_t text_size;
-    if (TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y) == false) {
-        SDL_Log("Failed to measure score text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return;
-    }
+    if (snake->window_frame.enabled == false) {
+        vector2i_t text_size;
+        if (TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y) == false) {
+            SDL_Log("Failed to measure score text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
 
-    // Render the score text at the top center of the screen.
-    if (TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f) == false) {
-        SDL_Log("Failed to render score text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return;
+        // Render the score text at the top center of the screen.
+        if (TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f) == false) {
+            SDL_Log("Failed to render score text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
     }
 
     if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START ||

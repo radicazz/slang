@@ -2,10 +2,11 @@
 
 #include <SDL3/SDL_log.h>
 
-static const SDL_Color k_frame_color = {20, 20, 20, 255};
-static const SDL_Color k_frame_border_color = {70, 70, 70, 255};
-static const SDL_Color k_frame_close_color = {200, 70, 70, 255};
-static const SDL_Color k_frame_close_icon_color = {245, 245, 245, 255};
+static const SDL_Color k_frame_color = {24, 27, 31, 255};
+static const SDL_Color k_frame_border_color = {60, 63, 70, 255};
+static const SDL_Color k_frame_separator_color = {45, 48, 54, 255};
+static const SDL_Color k_frame_close_color = {214, 86, 86, 255};
+static const SDL_Color k_frame_close_icon_color = {250, 250, 250, 255};
 
 static const float k_frame_padding = (float)WINDOW_FRAME_PADDING;
 static const float k_frame_button_size = (float)WINDOW_FRAME_BUTTON_SIZE;
@@ -227,6 +228,19 @@ bool window_frame_render(window_t* window, window_frame_t* frame) {
 
     if (SDL_RenderFillRect(window->sdl_renderer, &layout.titlebar_rect) == false) {
         SDL_Log("Failed to render frame title bar: %s", SDL_GetError());
+        return false;
+    }
+
+    if (SDL_SetRenderDrawColor(window->sdl_renderer, k_frame_separator_color.r, k_frame_separator_color.g,
+                               k_frame_separator_color.b, k_frame_separator_color.a) == false) {
+        SDL_Log("Failed to set frame separator color: %s", SDL_GetError());
+        return false;
+    }
+
+    const float separator_y = layout.titlebar_rect.h - 1.f;
+    if (SDL_RenderLine(window->sdl_renderer, layout.titlebar_rect.x, separator_y,
+                       layout.titlebar_rect.x + layout.titlebar_rect.w, separator_y) == false) {
+        SDL_Log("Failed to render frame separator: %s", SDL_GetError());
         return false;
     }
 

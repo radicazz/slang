@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <SDL3/SDL_log.h>
 
-static bool snake_text_format_titlebar(snake_t* snake, int* out_written) {
+static bool snake_text_format_titlebar_status(snake_t* snake, int* out_full_written, int* out_compact_written) {
     SDL_assert(snake != NULL);
-    SDL_assert(out_written != NULL);
+    SDL_assert(out_full_written != NULL);
+    SDL_assert(out_compact_written != NULL);
 
     int total_seconds = snake->game_time_seconds;
     if (total_seconds < 0) {
@@ -15,10 +16,19 @@ static bool snake_text_format_titlebar(snake_t* snake, int* out_written) {
     const int minutes = total_seconds / 60;
     const int seconds = total_seconds % 60;
 
-    *out_written = snprintf(snake->text_titlebar_buffer, sizeof(snake->text_titlebar_buffer),
-                            "slang  Score: %zu  Time: %02d:%02d", snake->array_body.size, minutes, seconds);
-    if (*out_written < 0 || (size_t)*out_written >= sizeof(snake->text_titlebar_buffer)) {
-        SDL_Log("Failed to format title bar text");
+    *out_full_written = snprintf(snake->text_titlebar_status_buffer, sizeof(snake->text_titlebar_status_buffer),
+                                 "Score: %zu  Time: %02d:%02d", snake->array_body.size, minutes, seconds);
+    if (*out_full_written < 0 || (size_t)*out_full_written >= sizeof(snake->text_titlebar_status_buffer)) {
+        SDL_Log("Failed to format title bar status text");
+        return false;
+    }
+
+    *out_compact_written =
+        snprintf(snake->text_titlebar_status_compact_buffer, sizeof(snake->text_titlebar_status_compact_buffer),
+                 "S:%zu  %02d:%02d", snake->array_body.size, minutes, seconds);
+    if (*out_compact_written < 0 ||
+        (size_t)*out_compact_written >= sizeof(snake->text_titlebar_status_compact_buffer)) {
+        SDL_Log("Failed to format compact title bar status text");
         return false;
     }
 
@@ -180,20 +190,47 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    const char* titlebar_label = "slang";
+    snake->text_titlebar_label = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                titlebar_label, SDL_strlen(titlebar_label));
+    if (snake->text_titlebar_label == NULL) {
+        SDL_Log("Failed to create title bar label text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_titlebar_label, 245, 245, 245, 255) == false) {
+        SDL_Log("Failed to set title bar label text color: %s", SDL_GetError());
+        return false;
+    }
+
     int titlebar_written = 0;
-    if (snake_text_format_titlebar(snake, &titlebar_written) == false) {
+    int titlebar_compact_written = 0;
+    if (snake_text_format_titlebar_status(snake, &titlebar_written, &titlebar_compact_written) == false) {
         return false;
     }
 
-    snake->text_titlebar = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
-                                          snake->text_titlebar_buffer, (size_t)titlebar_written);
-    if (snake->text_titlebar == NULL) {
-        SDL_Log("Failed to create title bar text object: %s", SDL_GetError());
+    snake->text_titlebar_status = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                 snake->text_titlebar_status_buffer, (size_t)titlebar_written);
+    if (snake->text_titlebar_status == NULL) {
+        SDL_Log("Failed to create title bar status text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(snake->text_titlebar, 235, 235, 235, 255) == false) {
-        SDL_Log("Failed to set title bar text color: %s", SDL_GetError());
+    if (TTF_SetTextColor(snake->text_titlebar_status, 215, 215, 215, 255) == false) {
+        SDL_Log("Failed to set title bar status text color: %s", SDL_GetError());
+        return false;
+    }
+
+    snake->text_titlebar_status_compact =
+        TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                       snake->text_titlebar_status_compact_buffer, (size_t)titlebar_compact_written);
+    if (snake->text_titlebar_status_compact == NULL) {
+        SDL_Log("Failed to create compact title bar status text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_titlebar_status_compact, 215, 215, 215, 255) == false) {
+        SDL_Log("Failed to set compact title bar status text color: %s", SDL_GetError());
         return false;
     }
 
@@ -253,9 +290,19 @@ void snake_text_destroy(snake_t* snake) {
         snake->text_resume_countdown = NULL;
     }
 
-    if (snake->text_titlebar != NULL) {
-        TTF_DestroyText(snake->text_titlebar);
-        snake->text_titlebar = NULL;
+    if (snake->text_titlebar_label != NULL) {
+        TTF_DestroyText(snake->text_titlebar_label);
+        snake->text_titlebar_label = NULL;
+    }
+
+    if (snake->text_titlebar_status != NULL) {
+        TTF_DestroyText(snake->text_titlebar_status);
+        snake->text_titlebar_status = NULL;
+    }
+
+    if (snake->text_titlebar_status_compact != NULL) {
+        TTF_DestroyText(snake->text_titlebar_status_compact);
+        snake->text_titlebar_status_compact = NULL;
     }
 }
 
@@ -279,7 +326,7 @@ bool snake_text_update_score(snake_t* snake) {
         return false;
     }
 
-    return snake_text_update_titlebar(snake);
+    return snake_text_update_titlebar_status(snake);
 }
 
 bool snake_text_update_pause(snake_t* snake) {
@@ -344,17 +391,25 @@ bool snake_text_update_resume_countdown(snake_t* snake, int seconds) {
     return true;
 }
 
-bool snake_text_update_titlebar(snake_t* snake) {
+bool snake_text_update_titlebar_status(snake_t* snake) {
     SDL_assert(snake != NULL);
-    SDL_assert(snake->text_titlebar != NULL);
+    SDL_assert(snake->text_titlebar_status != NULL);
+    SDL_assert(snake->text_titlebar_status_compact != NULL);
 
     int written = 0;
-    if (snake_text_format_titlebar(snake, &written) == false) {
+    int compact_written = 0;
+    if (snake_text_format_titlebar_status(snake, &written, &compact_written) == false) {
         return false;
     }
 
-    if (TTF_SetTextString(snake->text_titlebar, snake->text_titlebar_buffer, (size_t)written) == false) {
-        SDL_Log("Failed to update title bar text: %s", SDL_GetError());
+    if (TTF_SetTextString(snake->text_titlebar_status, snake->text_titlebar_status_buffer, (size_t)written) == false) {
+        SDL_Log("Failed to update title bar status text: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextString(snake->text_titlebar_status_compact, snake->text_titlebar_status_compact_buffer,
+                          (size_t)compact_written) == false) {
+        SDL_Log("Failed to update compact title bar status text: %s", SDL_GetError());
         return false;
     }
 

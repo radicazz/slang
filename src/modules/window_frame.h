@@ -6,9 +6,9 @@
 #include "window.h"
 #include "../utils/vector.h"
 
-#define WINDOW_FRAME_HEIGHT 28
-#define WINDOW_FRAME_PADDING 6
-#define WINDOW_FRAME_BUTTON_SIZE 16
+#define WINDOW_FRAME_HEIGHT 32
+#define WINDOW_FRAME_PADDING 8
+#define WINDOW_FRAME_BUTTON_SIZE 18
 #define WINDOW_FRAME_ICON_INSET 4
 
 /**

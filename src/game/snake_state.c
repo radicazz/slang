@@ -359,7 +359,7 @@ void snake_update_fixed(snake_t* snake) {
     const int elapsed_seconds = (int)(snake->game_time_ms / 1000u);
     if (elapsed_seconds != snake->game_time_seconds) {
         snake->game_time_seconds = elapsed_seconds;
-        if (snake_text_update_titlebar(snake) == false) {
+        if (snake_text_update_titlebar_status(snake) == false) {
             snake->window.is_running = false;
             return;
         }
