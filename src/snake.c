@@ -21,6 +21,10 @@ bool snake_create(snake_t* snake, const char* title) {
     }
 
     window_frame_init(&snake->window_frame);
+    if (window_frame_enable(&snake->window, &snake->window_frame, true) == false) {
+        SDL_Log("Failed to enable custom window frame");
+        goto fail;
+    }
 
     if (audio_manager_create(&snake->audio) == false) {
         SDL_Log("Warning: Failed to initialize audio, continuing without sound");

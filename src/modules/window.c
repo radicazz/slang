@@ -67,7 +67,9 @@ bool window_create(window_t* window, const char* title, int width, int height) {
         return false;
     }
 
-    if (SDL_CreateWindowAndRenderer(title, width, height, 0, &window->sdl_window, &window->sdl_renderer) == false) {
+    const Uint64 window_flags = SDL_WINDOW_BORDERLESS;
+    if (SDL_CreateWindowAndRenderer(title, width, height, window_flags, &window->sdl_window, &window->sdl_renderer) ==
+        false) {
         SDL_Log("Failed to create window and renderer: %s", SDL_GetError());
         SDL_Quit();
         return false;
