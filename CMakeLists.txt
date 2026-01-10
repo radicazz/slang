@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(slang VERSION 0.1.2 LANGUAGES C)
+project(slang VERSION 0.1.3 LANGUAGES C)
 
 enable_testing()
 
