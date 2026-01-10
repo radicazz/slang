@@ -73,6 +73,12 @@ typedef struct {
     TTF_Text* text_resume_countdown;
     char text_resume_countdown_buffer[16];
 
+    TTF_Text* text_titlebar;
+    char text_titlebar_buffer[96];
+
+    Uint64 game_time_ms;
+    int game_time_seconds;
+
     Uint64 resume_countdown_end_ms;
     int resume_countdown_value;
 } snake_t;

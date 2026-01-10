@@ -263,6 +263,9 @@ bool snake_state_reset(snake_t* snake) {
 
     dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
 
+    snake->game_time_ms = 0;
+    snake->game_time_seconds = 0;
+
     if (snake_text_update_score(snake) == false) {
         dynamic_array_destroy(&snake->array_food);
         dynamic_array_destroy(&snake->array_body);
@@ -350,6 +353,16 @@ void snake_update_fixed(snake_t* snake) {
 
     if (snake->state != SNAKE_STATE_PLAYING) {
         return;
+    }
+
+    snake->game_time_ms += WINDOW_TICK_INTERVAL;
+    const int elapsed_seconds = (int)(snake->game_time_ms / 1000u);
+    if (elapsed_seconds != snake->game_time_seconds) {
+        snake->game_time_seconds = elapsed_seconds;
+        if (snake_text_update_titlebar(snake) == false) {
+            snake->window.is_running = false;
+            return;
+        }
     }
 
     move_head_and_body(snake);

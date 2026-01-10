@@ -26,6 +26,40 @@ static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, 
     return true;
 }
 
+static bool render_titlebar_text(snake_t* snake, const vector2i_t* screen_size) {
+    SDL_assert(snake != NULL);
+    SDL_assert(screen_size != NULL);
+    SDL_assert(snake->text_titlebar != NULL);
+
+    vector2i_t text_size;
+    if (get_text_size(snake, snake->text_titlebar, &text_size, "title bar") == false) {
+        return false;
+    }
+
+    const float left_padding = (float)WINDOW_FRAME_PADDING;
+    const float right_padding = (float)(WINDOW_FRAME_PADDING * 2 + WINDOW_FRAME_BUTTON_SIZE);
+    float x = left_padding;
+    const float max_right = (float)screen_size->x - right_padding;
+    if ((float)text_size.x > (max_right - left_padding)) {
+        x = left_padding;
+    } else {
+        x = left_padding + (max_right - left_padding - (float)text_size.x) * 0.5f;
+    }
+
+    float y = ((float)WINDOW_FRAME_HEIGHT - (float)text_size.y) * 0.5f;
+    if (y < 0.f) {
+        y = 0.f;
+    }
+
+    if (TTF_DrawRendererText(snake->text_titlebar, x, y) == false) {
+        SDL_Log("Failed to render title bar text: %s", SDL_GetError());
+        snake->window.is_running = false;
+        return false;
+    }
+
+    return true;
+}
+
 void snake_render_frame(snake_t* snake) {
     SDL_assert(snake != NULL);
     SDL_assert(snake->window.sdl_window != NULL);
@@ -182,6 +216,10 @@ void snake_render_frame(snake_t* snake) {
     if (window_frame_render(&snake->window, &snake->window_frame) == false) {
         SDL_Log("Failed to render custom window frame");
         snake->window.is_running = false;
+        return;
+    }
+
+    if (render_titlebar_text(snake, &screen_size) == false) {
         return;
     }
 

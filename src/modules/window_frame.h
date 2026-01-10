@@ -7,6 +7,9 @@
 #include "../utils/vector.h"
 
 #define WINDOW_FRAME_HEIGHT 28
+#define WINDOW_FRAME_PADDING 6
+#define WINDOW_FRAME_BUTTON_SIZE 16
+#define WINDOW_FRAME_ICON_INSET 4
 
 /**
  * @brief Stores custom window frame interaction state.

@@ -7,9 +7,9 @@ static const SDL_Color k_frame_border_color = {70, 70, 70, 255};
 static const SDL_Color k_frame_close_color = {200, 70, 70, 255};
 static const SDL_Color k_frame_close_icon_color = {245, 245, 245, 255};
 
-static const float k_frame_padding = 6.f;
-static const float k_frame_button_size = 16.f;
-static const float k_frame_close_icon_inset = 4.f;
+static const float k_frame_padding = (float)WINDOW_FRAME_PADDING;
+static const float k_frame_button_size = (float)WINDOW_FRAME_BUTTON_SIZE;
+static const float k_frame_close_icon_inset = (float)WINDOW_FRAME_ICON_INSET;
 
 typedef struct {
     SDL_FRect titlebar_rect;

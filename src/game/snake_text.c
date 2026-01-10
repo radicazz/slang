@@ -3,6 +3,28 @@
 #include <stdio.h>
 #include <SDL3/SDL_log.h>
 
+static bool snake_text_format_titlebar(snake_t* snake, int* out_written) {
+    SDL_assert(snake != NULL);
+    SDL_assert(out_written != NULL);
+
+    int total_seconds = snake->game_time_seconds;
+    if (total_seconds < 0) {
+        total_seconds = 0;
+    }
+
+    const int minutes = total_seconds / 60;
+    const int seconds = total_seconds % 60;
+
+    *out_written = snprintf(snake->text_titlebar_buffer, sizeof(snake->text_titlebar_buffer),
+                            "slang  Score: %zu  Time: %02d:%02d", snake->array_body.size, minutes, seconds);
+    if (*out_written < 0 || (size_t)*out_written >= sizeof(snake->text_titlebar_buffer)) {
+        SDL_Log("Failed to format title bar text");
+        return false;
+    }
+
+    return true;
+}
+
 bool snake_text_create(snake_t* snake) {
     SDL_assert(snake != NULL);
 
@@ -158,6 +180,23 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    int titlebar_written = 0;
+    if (snake_text_format_titlebar(snake, &titlebar_written) == false) {
+        return false;
+    }
+
+    snake->text_titlebar = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                          snake->text_titlebar_buffer, (size_t)titlebar_written);
+    if (snake->text_titlebar == NULL) {
+        SDL_Log("Failed to create title bar text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_titlebar, 235, 235, 235, 255) == false) {
+        SDL_Log("Failed to set title bar text color: %s", SDL_GetError());
+        return false;
+    }
+
     return true;
 }
 
@@ -213,6 +252,11 @@ void snake_text_destroy(snake_t* snake) {
         TTF_DestroyText(snake->text_resume_countdown);
         snake->text_resume_countdown = NULL;
     }
+
+    if (snake->text_titlebar != NULL) {
+        TTF_DestroyText(snake->text_titlebar);
+        snake->text_titlebar = NULL;
+    }
 }
 
 bool snake_text_update_score(snake_t* snake) {
@@ -231,7 +275,11 @@ bool snake_text_update_score(snake_t* snake) {
         return false;
     }
 
-    return snake_text_update_pause(snake);
+    if (snake_text_update_pause(snake) == false) {
+        return false;
+    }
+
+    return snake_text_update_titlebar(snake);
 }
 
 bool snake_text_update_pause(snake_t* snake) {
@@ -290,6 +338,23 @@ bool snake_text_update_resume_countdown(snake_t* snake, int seconds) {
     if (TTF_SetTextString(snake->text_resume_countdown, snake->text_resume_countdown_buffer, (size_t)written) ==
         false) {
         SDL_Log("Failed to update resume countdown text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+bool snake_text_update_titlebar(snake_t* snake) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_titlebar != NULL);
+
+    int written = 0;
+    if (snake_text_format_titlebar(snake, &written) == false) {
+        return false;
+    }
+
+    if (TTF_SetTextString(snake->text_titlebar, snake->text_titlebar_buffer, (size_t)written) == false) {
+        SDL_Log("Failed to update title bar text: %s", SDL_GetError());
         return false;
     }
 
