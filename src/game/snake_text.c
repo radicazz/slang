@@ -3,6 +3,61 @@
 #include <stdio.h>
 #include <SDL3/SDL_log.h>
 
+static bool create_resume_countdown_text(snake_t* snake, size_t length) {
+    SDL_assert(snake != NULL);
+
+    if (snake->text_resume_countdown != NULL) {
+        TTF_DestroyText(snake->text_resume_countdown);
+        snake->text_resume_countdown = NULL;
+    }
+    if (snake->text_resume_countdown_texture != NULL) {
+        SDL_DestroyTexture(snake->text_resume_countdown_texture);
+        snake->text_resume_countdown_texture = NULL;
+    }
+    snake->text_resume_countdown_size.x = 0;
+    snake->text_resume_countdown_size.y = 0;
+
+    snake->text_resume_countdown = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                  snake->text_resume_countdown_buffer, length);
+    if (snake->text_resume_countdown == NULL) {
+        SDL_Log("Failed to create resume countdown text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_resume_countdown, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set resume countdown text color: %s", SDL_GetError());
+        return false;
+    }
+
+    SDL_Surface* surface =
+        TTF_RenderText_Blended(snake->window.ttf_font_default, snake->text_resume_countdown_buffer, length,
+                               (SDL_Color){255, 255, 255, 255});
+    if (surface == NULL) {
+        SDL_Log("Failed to render resume countdown surface: %s", SDL_GetError());
+        return false;
+    }
+
+    snake->text_resume_countdown_texture = SDL_CreateTextureFromSurface(snake->window.sdl_renderer, surface);
+    snake->text_resume_countdown_size.x = surface->w;
+    snake->text_resume_countdown_size.y = surface->h;
+    SDL_DestroySurface(surface);
+    if (snake->text_resume_countdown_texture == NULL) {
+        SDL_Log("Failed to create resume countdown texture: %s", SDL_GetError());
+        return false;
+    }
+
+    if (SDL_SetTextureBlendMode(snake->text_resume_countdown_texture, SDL_BLENDMODE_BLEND) == false) {
+        SDL_Log("Failed to set resume countdown texture blend mode: %s", SDL_GetError());
+        SDL_DestroyTexture(snake->text_resume_countdown_texture);
+        snake->text_resume_countdown_texture = NULL;
+        snake->text_resume_countdown_size.x = 0;
+        snake->text_resume_countdown_size.y = 0;
+        return false;
+    }
+
+    return true;
+}
+
 bool snake_text_create(snake_t* snake) {
     SDL_assert(snake != NULL);
 
@@ -146,15 +201,7 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
-    snake->text_resume_countdown = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
-                                                  snake->text_resume_countdown_buffer, (size_t)resume_written);
-    if (snake->text_resume_countdown == NULL) {
-        SDL_Log("Failed to create resume countdown text object: %s", SDL_GetError());
-        return false;
-    }
-
-    if (TTF_SetTextColor(snake->text_resume_countdown, 255, 255, 255, 255) == false) {
-        SDL_Log("Failed to set resume countdown text color: %s", SDL_GetError());
+    if (create_resume_countdown_text(snake, (size_t)resume_written) == false) {
         return false;
     }
 
@@ -213,6 +260,12 @@ void snake_text_destroy(snake_t* snake) {
         TTF_DestroyText(snake->text_resume_countdown);
         snake->text_resume_countdown = NULL;
     }
+    if (snake->text_resume_countdown_texture != NULL) {
+        SDL_DestroyTexture(snake->text_resume_countdown_texture);
+        snake->text_resume_countdown_texture = NULL;
+    }
+    snake->text_resume_countdown_size.x = 0;
+    snake->text_resume_countdown_size.y = 0;
 }
 
 bool snake_text_update_score(snake_t* snake) {
@@ -274,7 +327,6 @@ bool snake_text_update_game_over(snake_t* snake) {
 
 bool snake_text_update_resume_countdown(snake_t* snake, int seconds) {
     SDL_assert(snake != NULL);
-    SDL_assert(snake->text_resume_countdown != NULL);
 
     if (seconds < 0) {
         seconds = 0;
@@ -287,11 +339,5 @@ bool snake_text_update_resume_countdown(snake_t* snake, int seconds) {
         return false;
     }
 
-    if (TTF_SetTextString(snake->text_resume_countdown, snake->text_resume_countdown_buffer, (size_t)written) ==
-        false) {
-        SDL_Log("Failed to update resume countdown text: %s", SDL_GetError());
-        return false;
-    }
-
-    return true;
+    return create_resume_countdown_text(snake, (size_t)written);
 }

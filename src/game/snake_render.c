@@ -149,10 +149,22 @@ void snake_render_frame(snake_t* snake) {
         }
 
         if (layout.has_subtitle == true) {
-            if (TTF_DrawRendererText(subtitle_text, layout.subtitle_pos.x, layout.subtitle_pos.y) == false) {
-                SDL_Log("Failed to render menu subtitle text: %s", SDL_GetError());
-                snake->window.is_running = false;
-                return;
+            if (snake->state == SNAKE_STATE_RESUMING && snake->text_resume_countdown_texture != NULL) {
+                SDL_FRect dst = {layout.subtitle_pos.x, layout.subtitle_pos.y,
+                                 (float)snake->text_resume_countdown_size.x,
+                                 (float)snake->text_resume_countdown_size.y};
+                if (SDL_RenderTexture(snake->window.sdl_renderer, snake->text_resume_countdown_texture, NULL, &dst) ==
+                    false) {
+                    SDL_Log("Failed to render resume countdown texture: %s", SDL_GetError());
+                    snake->window.is_running = false;
+                    return;
+                }
+            } else {
+                if (TTF_DrawRendererText(subtitle_text, layout.subtitle_pos.x, layout.subtitle_pos.y) == false) {
+                    SDL_Log("Failed to render menu subtitle text: %s", SDL_GetError());
+                    snake->window.is_running = false;
+                    return;
+                }
             }
         }
 

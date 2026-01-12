@@ -70,6 +70,8 @@ typedef struct {
     TTF_Text* text_resume_title;
     TTF_Text* text_resume_countdown;
     char text_resume_countdown_buffer[16];
+    SDL_Texture* text_resume_countdown_texture;
+    vector2i_t text_resume_countdown_size;
 
     Uint64 resume_countdown_end_ms;
     int resume_countdown_value;
