@@ -34,6 +34,11 @@ typedef struct {
     SDL_Color border_color;
 } ui_slider_t;
 
+typedef struct {
+    ui_slider_t slider;
+    int min_value;
+    int max_value;
+} ui_slider_int_t;
 /**
  * @brief Initialize a button with colors and zeroed geometry.
  *
@@ -161,5 +166,13 @@ void ui_slider_layout(ui_slider_t* slider, float center_x, float center_y, float
 bool ui_slider_contains(const ui_slider_t* slider, float x, float y);
 float ui_slider_get_value(const ui_slider_t* slider, float x);
 bool ui_slider_render(SDL_Renderer* renderer, const ui_slider_t* slider, float value);
+
+void ui_slider_int_init(ui_slider_int_t* slider, SDL_Color track_color, SDL_Color fill_color, SDL_Color knob_color,
+                        SDL_Color border_color, int min_value, int max_value);
+void ui_slider_int_layout(ui_slider_int_t* slider, float center_x, float center_y, float width, float height,
+                          float knob_width);
+bool ui_slider_int_contains(const ui_slider_int_t* slider, float x, float y);
+int ui_slider_int_get_value(const ui_slider_int_t* slider, float x);
+bool ui_slider_int_render(SDL_Renderer* renderer, const ui_slider_int_t* slider, int value);
 
 #endif  // UI_H

@@ -278,3 +278,56 @@ bool ui_slider_render(SDL_Renderer* renderer, const ui_slider_t* slider, float v
 
     return true;
 }
+
+void ui_slider_int_init(ui_slider_int_t* slider, SDL_Color track_color, SDL_Color fill_color, SDL_Color knob_color,
+                        SDL_Color border_color, int min_value, int max_value) {
+    SDL_assert(slider != NULL);
+
+    ui_slider_init(&slider->slider, track_color, fill_color, knob_color, border_color);
+    slider->min_value = min_value;
+    slider->max_value = max_value;
+}
+
+void ui_slider_int_layout(ui_slider_int_t* slider, float center_x, float center_y, float width, float height,
+                          float knob_width) {
+    SDL_assert(slider != NULL);
+
+    ui_slider_layout(&slider->slider, center_x, center_y, width, height, knob_width);
+}
+
+bool ui_slider_int_contains(const ui_slider_int_t* slider, float x, float y) {
+    SDL_assert(slider != NULL);
+
+    return ui_slider_contains(&slider->slider, x, y);
+}
+
+int ui_slider_int_get_value(const ui_slider_int_t* slider, float x) {
+    SDL_assert(slider != NULL);
+
+    const int range = slider->max_value - slider->min_value;
+    if (range <= 0) {
+        return slider->min_value;
+    }
+
+    const float value = ui_slider_get_value(&slider->slider, x);
+    return slider->min_value + (int)((value * (float)range) + 0.5f);
+}
+
+bool ui_slider_int_render(SDL_Renderer* renderer, const ui_slider_int_t* slider, int value) {
+    SDL_assert(renderer != NULL);
+    SDL_assert(slider != NULL);
+
+    const int range = slider->max_value - slider->min_value;
+    if (range <= 0) {
+        return ui_slider_render(renderer, &slider->slider, 0.0f);
+    }
+
+    float normalized = (float)(value - slider->min_value) / (float)range;
+    if (normalized < 0.0f) {
+        normalized = 0.0f;
+    } else if (normalized > 1.0f) {
+        normalized = 1.0f;
+    }
+
+    return ui_slider_render(renderer, &slider->slider, normalized);
+}
