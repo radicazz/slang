@@ -4,6 +4,32 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_log.h>
 
+static float clamp_volume(float volume) {
+    if (volume < 0.0f) {
+        return 0.0f;
+    }
+    if (volume > 1.0f) {
+        return 1.0f;
+    }
+    return volume;
+}
+
+static bool apply_gain(audio_manager_t* manager) {
+    SDL_assert(manager != NULL);
+
+    if (manager->stream == NULL) {
+        return false;
+    }
+
+    const float gain = manager->is_muted ? 0.0f : manager->volume;
+    if (SDL_SetAudioStreamGain(manager->stream, gain) == false) {
+        SDL_Log("Failed to set audio stream gain: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
 bool audio_manager_create(audio_manager_t* manager) {
     SDL_assert(manager != NULL);
 
@@ -32,6 +58,15 @@ bool audio_manager_create(audio_manager_t* manager) {
     }
 
     manager->is_initialized = true;
+    manager->volume = 1.0f;
+    manager->is_muted = false;
+    if (apply_gain(manager) == false) {
+        SDL_DestroyAudioStream(manager->stream);
+        manager->stream = NULL;
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        manager->is_initialized = false;
+        return false;
+    }
     return true;
 }
 
@@ -139,4 +174,36 @@ bool audio_manager_play_sound(audio_manager_t* manager, sound_id_t id) {
     }
 
     return true;
+}
+
+bool audio_manager_set_volume(audio_manager_t* manager, float volume) {
+    SDL_assert(manager != NULL);
+
+    if (manager->is_initialized == false) {
+        return false;
+    }
+
+    manager->volume = clamp_volume(volume);
+    return apply_gain(manager);
+}
+
+bool audio_manager_set_muted(audio_manager_t* manager, bool muted) {
+    SDL_assert(manager != NULL);
+
+    if (manager->is_initialized == false) {
+        return false;
+    }
+
+    manager->is_muted = muted;
+    return apply_gain(manager);
+}
+
+float audio_manager_get_volume(const audio_manager_t* manager) {
+    SDL_assert(manager != NULL);
+    return manager->volume;
+}
+
+bool audio_manager_is_muted(const audio_manager_t* manager) {
+    SDL_assert(manager != NULL);
+    return manager->is_muted;
 }
