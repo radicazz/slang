@@ -20,6 +20,8 @@ typedef struct {
     SDL_AudioStream* stream;
     sound_data_t sounds[SOUND_COUNT];
     bool is_initialized;
+    bool is_muted;
+    float volume;
 } audio_manager_t;
 
 bool audio_manager_create(audio_manager_t* manager);
@@ -27,5 +29,9 @@ void audio_manager_destroy(audio_manager_t* manager);
 
 bool audio_manager_load_sound(audio_manager_t* manager, sound_id_t id, const char* filepath);
 bool audio_manager_play_sound(audio_manager_t* manager, sound_id_t id);
+bool audio_manager_set_volume(audio_manager_t* manager, float volume);
+bool audio_manager_set_muted(audio_manager_t* manager, bool muted);
+float audio_manager_get_volume(const audio_manager_t* manager);
+bool audio_manager_is_muted(const audio_manager_t* manager);
 
 #endif  // AUDIO_H
