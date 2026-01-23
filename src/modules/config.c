@@ -53,21 +53,23 @@ static bool config_get_paths(char* out_primary, size_t primary_size, char* out_f
     SDL_assert(primary_size > 0);
     SDL_assert(fallback_size > 0);
 
-    const char* base_path = SDL_GetBasePath();
-    if (base_path == NULL || base_path[0] == '\0') {
+    char* base_path = SDL_GetBasePath();
+    const char* base_path_to_use = base_path;
+    if (base_path_to_use == NULL || base_path_to_use[0] == '\0') {
         SDL_Log("Failed to get base path for config: %s", SDL_GetError());
-        base_path = "./";
+        base_path_to_use = "./";
     }
 
-    if (config_build_path_from_base(base_path, out_primary, primary_size) == false) {
-        return false;
+    bool success = config_build_path_from_base(base_path_to_use, out_primary, primary_size);
+    if (success == true) {
+        success = config_build_path_from_base("./", out_fallback, fallback_size);
     }
 
-    if (config_build_path_from_base("./", out_fallback, fallback_size) == false) {
-        return false;
+    if (base_path != NULL) {
+        SDL_free(base_path);
     }
 
-    return true;
+    return success;
 }
 
 static bool config_parse_bool(const char* value, bool* out_value) {

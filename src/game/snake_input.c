@@ -325,7 +325,8 @@ void snake_handle_events(snake_t* snake) {
         }
 
         if (event.type == SDL_EVENT_MOUSE_MOTION && snake->state == SNAKE_STATE_OPTIONS) {
-            snake_options_handle_mouse(snake, event.motion.x, event.motion.y, snake->options_dragging_volume);
+            const bool dragging_slider = snake->options_dragging_volume || snake->options_dragging_resume;
+            snake_options_handle_mouse(snake, event.motion.x, event.motion.y, dragging_slider);
         }
 
         if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && event.button.button == SDL_BUTTON_LEFT &&
