@@ -171,3 +171,110 @@ bool ui_checkbox_render(SDL_Renderer* renderer, const ui_checkbox_t* checkbox, b
 
     return true;
 }
+
+void ui_slider_init(ui_slider_t* slider, SDL_Color track_color, SDL_Color fill_color, SDL_Color knob_color,
+                    SDL_Color border_color) {
+    SDL_assert(slider != NULL);
+
+    slider->track_rect = (SDL_FRect){0.f, 0.f, 0.f, 0.f};
+    slider->knob_rect = (SDL_FRect){0.f, 0.f, 0.f, 0.f};
+    slider->track_color = track_color;
+    slider->fill_color = fill_color;
+    slider->knob_color = knob_color;
+    slider->border_color = border_color;
+}
+
+void ui_slider_layout(ui_slider_t* slider, float center_x, float center_y, float width, float height, float knob_width) {
+    SDL_assert(slider != NULL);
+
+    slider->track_rect.w = width;
+    slider->track_rect.h = height;
+    slider->track_rect.x = center_x - width * 0.5f;
+    slider->track_rect.y = center_y - height * 0.5f;
+
+    slider->knob_rect.w = knob_width;
+    slider->knob_rect.h = height + 8.f;
+    slider->knob_rect.y = center_y - slider->knob_rect.h * 0.5f;
+}
+
+bool ui_slider_contains(const ui_slider_t* slider, float x, float y) {
+    SDL_assert(slider != NULL);
+
+    const float min_x = slider->track_rect.x - slider->knob_rect.w * 0.5f;
+    const float max_x = slider->track_rect.x + slider->track_rect.w + slider->knob_rect.w * 0.5f;
+    const float min_y = SDL_min(slider->track_rect.y, slider->knob_rect.y);
+    const float max_y = SDL_max(slider->track_rect.y + slider->track_rect.h,
+                                slider->knob_rect.y + slider->knob_rect.h);
+    return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
+}
+
+float ui_slider_get_value(const ui_slider_t* slider, float x) {
+    SDL_assert(slider != NULL);
+
+    const float start = slider->track_rect.x;
+    const float end = slider->track_rect.x + slider->track_rect.w;
+    if (end <= start) {
+        return 0.0f;
+    }
+
+    float value = (x - start) / (end - start);
+    if (value < 0.0f) {
+        value = 0.0f;
+    } else if (value > 1.0f) {
+        value = 1.0f;
+    }
+    return value;
+}
+
+bool ui_slider_render(SDL_Renderer* renderer, const ui_slider_t* slider, float value) {
+    SDL_assert(renderer != NULL);
+    SDL_assert(slider != NULL);
+
+    ui_slider_t mutable_slider = *slider;
+
+    if (value < 0.0f) {
+        value = 0.0f;
+    } else if (value > 1.0f) {
+        value = 1.0f;
+    }
+
+    SDL_SetRenderDrawColor(renderer, slider->track_color.r, slider->track_color.g, slider->track_color.b,
+                           slider->track_color.a);
+    if (SDL_RenderFillRect(renderer, &slider->track_rect) == false) {
+        return false;
+    }
+
+    SDL_SetRenderDrawColor(renderer, slider->fill_color.r, slider->fill_color.g, slider->fill_color.b,
+                           slider->fill_color.a);
+    SDL_FRect fill_rect = slider->track_rect;
+    fill_rect.w = slider->track_rect.w * value;
+    if (SDL_RenderFillRect(renderer, &fill_rect) == false) {
+        return false;
+    }
+
+    if (slider->border_color.a > 0) {
+        SDL_SetRenderDrawColor(renderer, slider->border_color.r, slider->border_color.g, slider->border_color.b,
+                               slider->border_color.a);
+        if (SDL_RenderRect(renderer, &slider->track_rect) == false) {
+            return false;
+        }
+    }
+
+    mutable_slider.knob_rect.x =
+        slider->track_rect.x + slider->track_rect.w * value - slider->knob_rect.w * 0.5f;
+    SDL_SetRenderDrawColor(renderer, slider->knob_color.r, slider->knob_color.g, slider->knob_color.b,
+                           slider->knob_color.a);
+    if (SDL_RenderFillRect(renderer, &mutable_slider.knob_rect) == false) {
+        return false;
+    }
+
+    if (slider->border_color.a > 0) {
+        SDL_SetRenderDrawColor(renderer, slider->border_color.r, slider->border_color.g, slider->border_color.b,
+                               slider->border_color.a);
+        if (SDL_RenderRect(renderer, &mutable_slider.knob_rect) == false) {
+            return false;
+        }
+    }
+
+    return true;
+}

@@ -25,6 +25,15 @@ typedef struct {
     SDL_Color check_color;
 } ui_checkbox_t;
 
+typedef struct {
+    SDL_FRect track_rect;
+    SDL_FRect knob_rect;
+    SDL_Color track_color;
+    SDL_Color fill_color;
+    SDL_Color knob_color;
+    SDL_Color border_color;
+} ui_slider_t;
+
 /**
  * @brief Initialize a button with colors and zeroed geometry.
  *
@@ -145,5 +154,12 @@ bool ui_checkbox_contains(const ui_checkbox_t* checkbox, float x, float y);
  * @return true if rendering succeeded, false otherwise.
  */
 bool ui_checkbox_render(SDL_Renderer* renderer, const ui_checkbox_t* checkbox, bool is_checked);
+
+void ui_slider_init(ui_slider_t* slider, SDL_Color track_color, SDL_Color fill_color, SDL_Color knob_color,
+                    SDL_Color border_color);
+void ui_slider_layout(ui_slider_t* slider, float center_x, float center_y, float width, float height, float knob_width);
+bool ui_slider_contains(const ui_slider_t* slider, float x, float y);
+float ui_slider_get_value(const ui_slider_t* slider, float x);
+bool ui_slider_render(SDL_Renderer* renderer, const ui_slider_t* slider, float value);
 
 #endif  // UI_H
