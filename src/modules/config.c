@@ -16,6 +16,12 @@ static void config_clamp(game_config_t* config) {
     } else if (config->volume > 1.0f) {
         config->volume = 1.0f;
     }
+
+    if (config->resume_delay_seconds < CONFIG_RESUME_DELAY_MIN) {
+        config->resume_delay_seconds = CONFIG_RESUME_DELAY_MIN;
+    } else if (config->resume_delay_seconds > CONFIG_RESUME_DELAY_MAX) {
+        config->resume_delay_seconds = CONFIG_RESUME_DELAY_MAX;
+    }
 }
 
 void config_set_defaults(game_config_t* config) {
@@ -24,6 +30,7 @@ void config_set_defaults(game_config_t* config) {
     config->high_score = 0;
     config->mute = false;
     config->volume = 1.0f;
+    config->resume_delay_seconds = CONFIG_RESUME_DELAY_DEFAULT;
 }
 
 static bool config_build_path_from_base(const char* base_path, char* out_path, size_t path_size) {
@@ -127,8 +134,8 @@ static bool config_write_file(const char* path, const game_config_t* config) {
         return false;
     }
 
-    const int written = fprintf(file, "high_score=%zu\nmute=%d\nvolume=%.3f\n", config->high_score,
-                                config->mute ? 1 : 0, config->volume);
+    const int written = fprintf(file, "high_score=%zu\nmute=%d\nvolume=%.3f\nresume_delay=%d\n", config->high_score,
+                                config->mute ? 1 : 0, config->volume, config->resume_delay_seconds);
     if (written <= 0) {
         SDL_Log("Failed to write config contents");
         fclose(file);
@@ -229,6 +236,14 @@ static bool config_read_file(const char* path, game_config_t* config, bool* out_
                 break;
             }
             config->volume = parsed;
+        } else if (SDL_strcasecmp(key, "resume_delay") == 0) {
+            size_t parsed = 0;
+            if (config_parse_size(value, &parsed) == false) {
+                SDL_Log("Invalid resume_delay value: %s", value);
+                *out_invalid = true;
+                break;
+            }
+            config->resume_delay_seconds = (int)parsed;
         }
     }
 
