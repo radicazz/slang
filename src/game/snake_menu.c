@@ -117,6 +117,7 @@ static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t*
         ui_button_layout_from_label(&button, button_label_size, button_center_x, button_center_y,
                                     k_menu_button_padding_x, k_menu_button_padding_y);
         out_layout->button_rect = button.rect;
+        cursor_y += button_height;
     } else {
         out_layout->button_rect = (SDL_FRect){0.f, 0.f, 0.f, 0.f};
     }
@@ -129,6 +130,7 @@ static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t*
         ui_button_layout_from_label(&button, secondary_button_size, button_center_x, button_center_y,
                                     k_menu_button_padding_x, k_menu_button_padding_y);
         out_layout->secondary_button_rect = button.rect;
+        cursor_y += secondary_button_height;
     } else {
         out_layout->secondary_button_rect = (SDL_FRect){0.f, 0.f, 0.f, 0.f};
     }
