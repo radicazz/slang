@@ -265,6 +265,20 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    const char* resume_delay_label = "Resume Delay";
+    snake->text_options_resume_label =
+        TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default, resume_delay_label,
+                       SDL_strlen(resume_delay_label));
+    if (snake->text_options_resume_label == NULL) {
+        SDL_Log("Failed to create resume delay label text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_resume_label, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set resume delay label text color: %s", SDL_GetError());
+        return false;
+    }
+
     const char* back_label = "Back";
     snake->text_options_back_button = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
                                                      back_label, SDL_strlen(back_label));
@@ -369,6 +383,11 @@ void snake_text_destroy(snake_t* snake) {
         snake->text_options_mute_label = NULL;
     }
 
+    if (snake->text_options_resume_label != NULL) {
+        TTF_DestroyText(snake->text_options_resume_label);
+        snake->text_options_resume_label = NULL;
+    }
+
     if (snake->text_options_back_button != NULL) {
         TTF_DestroyText(snake->text_options_back_button);
         snake->text_options_back_button = NULL;
@@ -377,6 +396,11 @@ void snake_text_destroy(snake_t* snake) {
     if (snake->text_options_volume_value != NULL) {
         TTF_DestroyText(snake->text_options_volume_value);
         snake->text_options_volume_value = NULL;
+    }
+
+    if (snake->text_options_resume_value != NULL) {
+        TTF_DestroyText(snake->text_options_resume_value);
+        snake->text_options_resume_value = NULL;
     }
 }
 
@@ -485,7 +509,11 @@ bool snake_text_update_options_labels(snake_t* snake) {
     SDL_assert(snake->text_options_title != NULL);
     SDL_assert(snake->text_options_back_button != NULL);
 
-    return snake_text_update_options_volume(snake);
+    if (snake_text_update_options_volume(snake) == false) {
+        return false;
+    }
+
+    return snake_text_update_options_resume_delay(snake);
 }
 
 bool snake_text_update_options_volume(snake_t* snake) {
@@ -515,6 +543,40 @@ bool snake_text_update_options_volume(snake_t* snake) {
     if (TTF_SetTextString(snake->text_options_volume_value, snake->text_options_volume_value_buffer, (size_t)written) ==
         false) {
         SDL_Log("Failed to update options volume value text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+bool snake_text_update_options_resume_delay(snake_t* snake) {
+    SDL_assert(snake != NULL);
+
+    const int written = snprintf(snake->text_options_resume_value_buffer,
+                                 sizeof(snake->text_options_resume_value_buffer), "%d",
+                                 snake->config.resume_delay_seconds);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_options_resume_value_buffer)) {
+        SDL_Log("Failed to format options resume delay.");
+        return false;
+    }
+
+    if (snake->text_options_resume_value == NULL) {
+        snake->text_options_resume_value =
+            TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                           snake->text_options_resume_value_buffer, (size_t)written);
+        if (snake->text_options_resume_value == NULL) {
+            SDL_Log("Failed to create resume delay value text: %s", SDL_GetError());
+            return false;
+        }
+        if (TTF_SetTextColor(snake->text_options_resume_value, 255, 255, 255, 255) == false) {
+            SDL_Log("Failed to set resume delay value text color: %s", SDL_GetError());
+            return false;
+        }
+    }
+
+    if (TTF_SetTextString(snake->text_options_resume_value, snake->text_options_resume_value_buffer, (size_t)written) ==
+        false) {
+        SDL_Log("Failed to update resume delay value text: %s", SDL_GetError());
         return false;
     }
 

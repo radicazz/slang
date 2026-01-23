@@ -60,6 +60,7 @@ bool snake_create(snake_t* snake, const char* title) {
     snake->state = SNAKE_STATE_START;
     snake->options_return_state = SNAKE_STATE_START;
     snake->options_dragging_volume = false;
+    snake->options_dragging_resume = false;
 
     SDL_Log("Snake game initialized successfully");
     return snake->window.is_running;

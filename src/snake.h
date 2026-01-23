@@ -44,6 +44,7 @@ typedef struct {
     snake_game_state_t state;
     snake_game_state_t options_return_state;
     bool options_dragging_volume;
+    bool options_dragging_resume;
 
     snake_direction_t current_direction;
 
@@ -84,10 +85,13 @@ typedef struct {
     TTF_Text* text_options_title;
     TTF_Text* text_options_volume_label;
     TTF_Text* text_options_mute_label;
+    TTF_Text* text_options_resume_label;
     TTF_Text* text_options_back_button;
 
     TTF_Text* text_options_volume_value;
     char text_options_volume_value_buffer[16];
+    TTF_Text* text_options_resume_value;
+    char text_options_resume_value_buffer[8];
 
     Uint64 resume_countdown_end_ms;
     int resume_countdown_value;

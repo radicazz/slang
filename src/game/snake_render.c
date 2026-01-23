@@ -272,6 +272,16 @@ void snake_render_frame(snake_t* snake) {
             return;
         }
 
+        vector2i_t resume_label_size;
+        if (get_text_size(snake, snake->text_options_resume_label, &resume_label_size, "resume label") == false) {
+            return;
+        }
+
+        vector2i_t resume_value_size;
+        if (get_text_size(snake, snake->text_options_resume_value, &resume_value_size, "resume value") == false) {
+            return;
+        }
+
         vector2i_t back_label_size;
         if (get_text_size(snake, snake->text_options_back_button, &back_label_size, "back button") == false) {
             return;
@@ -288,14 +298,17 @@ void snake_render_frame(snake_t* snake) {
         const float volume_row_width = (float)volume_label_size.x + content_gap + slider_width + content_gap +
                                        (float)volume_value_size.x;
         const float mute_row_width = (float)mute_label_size.x + content_gap + checkbox_size;
+        const float resume_row_width = (float)resume_label_size.x + content_gap + slider_width + content_gap +
+                                       (float)resume_value_size.x;
         const float back_button_width = (float)back_label_size.x + 56.f;
 
         float content_width = SDL_max((float)title_size.x, volume_row_width);
         content_width = SDL_max(content_width, mute_row_width);
+        content_width = SDL_max(content_width, resume_row_width);
         content_width = SDL_max(content_width, back_button_width);
 
         const float content_height = (float)title_size.y + row_gap + row_height + row_gap + row_height + row_gap +
-                                     (float)back_label_size.y + 24.f;
+                                     row_height + row_gap + (float)back_label_size.y + 24.f;
 
         ui_panel_t panel;
         ui_panel_init(&panel, k_color_menu_panel, k_color_menu_panel_border);
@@ -368,6 +381,38 @@ void snake_render_frame(snake_t* snake) {
         ui_checkbox_layout(&checkbox, cursor_x, mute_row_center_y, checkbox_size);
         if (ui_checkbox_render(snake->window.sdl_renderer, &checkbox, snake->config.mute) == false) {
             SDL_Log("Failed to render mute checkbox: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        cursor_y += row_height + row_gap;
+        const float resume_row_center_y = cursor_y + row_height * 0.5f;
+        cursor_x = row_left;
+
+        if (TTF_DrawRendererText(snake->text_options_resume_label, cursor_x,
+                                 resume_row_center_y - resume_label_size.y * 0.5f) == false) {
+            SDL_Log("Failed to render resume label text: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        cursor_x += (float)resume_label_size.x + content_gap;
+        ui_slider_int_t resume_slider;
+        ui_slider_int_init(&resume_slider, k_color_menu_slider_track, k_color_menu_slider_fill, k_color_menu_slider_knob,
+                           k_color_menu_button_border, CONFIG_RESUME_DELAY_MIN, CONFIG_RESUME_DELAY_MAX);
+        ui_slider_int_layout(&resume_slider, cursor_x + slider_width * 0.5f, resume_row_center_y, slider_width,
+                             slider_height, knob_width);
+        if (ui_slider_int_render(snake->window.sdl_renderer, &resume_slider, snake->config.resume_delay_seconds) ==
+            false) {
+            SDL_Log("Failed to render resume delay slider: %s", SDL_GetError());
+            snake->window.is_running = false;
+            return;
+        }
+
+        cursor_x += slider_width + content_gap;
+        if (TTF_DrawRendererText(snake->text_options_resume_value, cursor_x,
+                                 resume_row_center_y - resume_value_size.y * 0.5f) == false) {
+            SDL_Log("Failed to render resume value text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
