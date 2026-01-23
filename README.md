@@ -31,10 +31,11 @@ recreated with defaults.
 
 Example:
 
-```
+```ini
 high_score=12
 mute=0
 volume=0.80
+resume_delay=2
 ```
 
 ## Building
