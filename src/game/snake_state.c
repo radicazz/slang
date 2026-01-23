@@ -328,6 +328,18 @@ void snake_state_begin_resume(snake_t* snake) {
     }
 }
 
+void snake_state_begin_options(snake_t* snake, snake_game_state_t return_state) {
+    SDL_assert(snake != NULL);
+
+    snake->options_return_state = return_state;
+    snake->options_dragging_volume = false;
+    if (snake_text_update_options_volume(snake) == false) {
+        snake->window.is_running = false;
+        return;
+    }
+    snake->state = SNAKE_STATE_OPTIONS;
+}
+
 void snake_update_fixed(snake_t* snake) {
     SDL_assert(snake != NULL);
 
@@ -357,6 +369,16 @@ void snake_update_fixed(snake_t* snake) {
     if (test_body_collision(snake) == true) {
         SDL_Log("Collision detected! Score: %zu", snake->array_body.size);
         snake->state = SNAKE_STATE_GAME_OVER;
+        if (snake->array_body.size > snake->config.high_score) {
+            snake->config.high_score = snake->array_body.size;
+            if (snake_save_config(snake) == false) {
+                SDL_Log("Failed to save config after new high score");
+            }
+            if (snake_text_update_start_high_score(snake) == false) {
+                snake->window.is_running = false;
+                return;
+            }
+        }
         if (snake_text_update_game_over(snake) == false) {
             snake->window.is_running = false;
         }

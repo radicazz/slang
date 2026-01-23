@@ -136,6 +136,23 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    const char* options_label = "Options";
+    snake->text_options_button = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                options_label, SDL_strlen(options_label));
+    if (snake->text_options_button == NULL) {
+        SDL_Log("Failed to create options button text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_button, 20, 20, 20, 255) == false) {
+        SDL_Log("Failed to set options button text color: %s", SDL_GetError());
+        return false;
+    }
+
+    if (snake_text_update_start_high_score(snake) == false) {
+        return false;
+    }
+
     const char* game_over_title = "Game Over";
     snake->text_game_over_title = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
                                                  game_over_title, SDL_strlen(game_over_title));
@@ -165,6 +182,10 @@ bool snake_text_create(snake_t* snake) {
 
     if (TTF_SetTextColor(snake->text_game_over_score, 255, 255, 255, 255) == false) {
         SDL_Log("Failed to set game over score text color: %s", SDL_GetError());
+        return false;
+    }
+
+    if (snake_text_update_high_score(snake) == false) {
         return false;
     }
 
@@ -205,6 +226,62 @@ bool snake_text_create(snake_t* snake) {
         return false;
     }
 
+    const char* options_title = "Options";
+    snake->text_options_title = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                               options_title, SDL_strlen(options_title));
+    if (snake->text_options_title == NULL) {
+        SDL_Log("Failed to create options title text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_title, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set options title text color: %s", SDL_GetError());
+        return false;
+    }
+
+    const char* volume_label = "Volume";
+    snake->text_options_volume_label = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                      volume_label, SDL_strlen(volume_label));
+    if (snake->text_options_volume_label == NULL) {
+        SDL_Log("Failed to create volume label text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_volume_label, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set volume label text color: %s", SDL_GetError());
+        return false;
+    }
+
+    const char* mute_label = "Mute";
+    snake->text_options_mute_label = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                    mute_label, SDL_strlen(mute_label));
+    if (snake->text_options_mute_label == NULL) {
+        SDL_Log("Failed to create mute label text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_mute_label, 255, 255, 255, 255) == false) {
+        SDL_Log("Failed to set mute label text color: %s", SDL_GetError());
+        return false;
+    }
+
+    const char* back_label = "Back";
+    snake->text_options_back_button = TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                                                     back_label, SDL_strlen(back_label));
+    if (snake->text_options_back_button == NULL) {
+        SDL_Log("Failed to create back button text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(snake->text_options_back_button, 20, 20, 20, 255) == false) {
+        SDL_Log("Failed to set back button text color: %s", SDL_GetError());
+        return false;
+    }
+
+    if (snake_text_update_options_labels(snake) == false) {
+        return false;
+    }
+
     return true;
 }
 
@@ -234,6 +311,16 @@ void snake_text_destroy(snake_t* snake) {
     if (snake->text_start_button != NULL) {
         TTF_DestroyText(snake->text_start_button);
         snake->text_start_button = NULL;
+    }
+
+    if (snake->text_start_high_score != NULL) {
+        TTF_DestroyText(snake->text_start_high_score);
+        snake->text_start_high_score = NULL;
+    }
+
+    if (snake->text_options_button != NULL) {
+        TTF_DestroyText(snake->text_options_button);
+        snake->text_options_button = NULL;
     }
 
     if (snake->text_game_over_title != NULL) {
@@ -266,6 +353,31 @@ void snake_text_destroy(snake_t* snake) {
     }
     snake->text_resume_countdown_size.x = 0;
     snake->text_resume_countdown_size.y = 0;
+
+    if (snake->text_options_title != NULL) {
+        TTF_DestroyText(snake->text_options_title);
+        snake->text_options_title = NULL;
+    }
+
+    if (snake->text_options_volume_label != NULL) {
+        TTF_DestroyText(snake->text_options_volume_label);
+        snake->text_options_volume_label = NULL;
+    }
+
+    if (snake->text_options_mute_label != NULL) {
+        TTF_DestroyText(snake->text_options_mute_label);
+        snake->text_options_mute_label = NULL;
+    }
+
+    if (snake->text_options_back_button != NULL) {
+        TTF_DestroyText(snake->text_options_back_button);
+        snake->text_options_back_button = NULL;
+    }
+
+    if (snake->text_options_volume_value != NULL) {
+        TTF_DestroyText(snake->text_options_volume_value);
+        snake->text_options_volume_value = NULL;
+    }
 }
 
 bool snake_text_update_score(snake_t* snake) {
@@ -310,8 +422,9 @@ bool snake_text_update_game_over(snake_t* snake) {
     SDL_assert(snake != NULL);
     SDL_assert(snake->text_game_over_score != NULL);
 
-    const int written = snprintf(snake->text_game_over_score_buffer, sizeof(snake->text_game_over_score_buffer),
-                                 "Final Score: %zu", snake->array_body.size);
+    const int written =
+        snprintf(snake->text_game_over_score_buffer, sizeof(snake->text_game_over_score_buffer),
+                 "Final Score: %zu | High Score: %zu", snake->array_body.size, snake->config.high_score);
     if (written < 0 || (size_t)written >= sizeof(snake->text_game_over_score_buffer)) {
         SDL_Log("Failed to format game over score text.");
         return false;
@@ -319,6 +432,89 @@ bool snake_text_update_game_over(snake_t* snake) {
 
     if (TTF_SetTextString(snake->text_game_over_score, snake->text_game_over_score_buffer, (size_t)written) == false) {
         SDL_Log("Failed to update game over score text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+bool snake_text_update_high_score(snake_t* snake) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_game_over_score != NULL);
+
+    return snake_text_update_game_over(snake);
+}
+
+bool snake_text_update_start_high_score(snake_t* snake) {
+    SDL_assert(snake != NULL);
+
+    const int written = snprintf(snake->text_start_high_score_buffer, sizeof(snake->text_start_high_score_buffer),
+                                 "High Score: %zu", snake->config.high_score);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_start_high_score_buffer)) {
+        SDL_Log("Failed to format start high score text.");
+        return false;
+    }
+
+    if (snake->text_start_high_score == NULL) {
+        snake->text_start_high_score =
+            TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                           snake->text_start_high_score_buffer, (size_t)written);
+        if (snake->text_start_high_score == NULL) {
+            SDL_Log("Failed to create start high score text object: %s", SDL_GetError());
+            return false;
+        }
+        if (TTF_SetTextColor(snake->text_start_high_score, 255, 255, 255, 255) == false) {
+            SDL_Log("Failed to set start high score text color: %s", SDL_GetError());
+            return false;
+        }
+    }
+
+    if (TTF_SetTextString(snake->text_start_high_score, snake->text_start_high_score_buffer, (size_t)written) ==
+        false) {
+        SDL_Log("Failed to update start high score text: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
+bool snake_text_update_options_labels(snake_t* snake) {
+    SDL_assert(snake != NULL);
+    SDL_assert(snake->text_options_volume_label != NULL);
+    SDL_assert(snake->text_options_mute_label != NULL);
+    SDL_assert(snake->text_options_title != NULL);
+    SDL_assert(snake->text_options_back_button != NULL);
+
+    return snake_text_update_options_volume(snake);
+}
+
+bool snake_text_update_options_volume(snake_t* snake) {
+    SDL_assert(snake != NULL);
+
+    const int written = snprintf(snake->text_options_volume_value_buffer,
+                                 sizeof(snake->text_options_volume_value_buffer), "%.2f", snake->config.volume);
+    if (written < 0 || (size_t)written >= sizeof(snake->text_options_volume_value_buffer)) {
+        SDL_Log("Failed to format options volume value.");
+        return false;
+    }
+
+    if (snake->text_options_volume_value == NULL) {
+        snake->text_options_volume_value =
+            TTF_CreateText(snake->window.ttf_text_engine, snake->window.ttf_font_default,
+                           snake->text_options_volume_value_buffer, (size_t)written);
+        if (snake->text_options_volume_value == NULL) {
+            SDL_Log("Failed to create options volume value text: %s", SDL_GetError());
+            return false;
+        }
+        if (TTF_SetTextColor(snake->text_options_volume_value, 255, 255, 255, 255) == false) {
+            SDL_Log("Failed to set options volume value text color: %s", SDL_GetError());
+            return false;
+        }
+    }
+
+    if (TTF_SetTextString(snake->text_options_volume_value, snake->text_options_volume_value_buffer, (size_t)written) ==
+        false) {
+        SDL_Log("Failed to update options volume value text: %s", SDL_GetError());
         return false;
     }
 

@@ -3,6 +3,7 @@
 
 #include "modules/window.h"
 #include "modules/audio.h"
+#include "modules/config.h"
 #include "utils/vector.h"
 #include "utils/dynamic_array.h"
 
@@ -23,7 +24,8 @@ typedef enum {
     SNAKE_STATE_PLAYING,
     SNAKE_STATE_PAUSED,
     SNAKE_STATE_RESUMING,
-    SNAKE_STATE_GAME_OVER
+    SNAKE_STATE_GAME_OVER,
+    SNAKE_STATE_OPTIONS
 } snake_game_state_t;
 
 typedef enum { SNAKE_CELL_EMPTY, SNAKE_CELL_WALL, SNAKE_CELL_FOOD, SNAKE_CELL_SNAKE } snake_cell_state_t;
@@ -37,8 +39,11 @@ typedef struct {
 typedef struct {
     window_t window;
     audio_manager_t audio;
+    game_config_t config;
 
     snake_game_state_t state;
+    snake_game_state_t options_return_state;
+    bool options_dragging_volume;
 
     snake_direction_t current_direction;
 
@@ -61,10 +66,13 @@ typedef struct {
 
     TTF_Text* text_start_title;
     TTF_Text* text_start_button;
+    TTF_Text* text_start_high_score;
+    char text_start_high_score_buffer[48];
+    TTF_Text* text_options_button;
 
     TTF_Text* text_game_over_title;
     TTF_Text* text_game_over_score;
-    char text_game_over_score_buffer[48];
+    char text_game_over_score_buffer[80];
     TTF_Text* text_restart_button;
 
     TTF_Text* text_resume_title;
@@ -73,12 +81,22 @@ typedef struct {
     SDL_Texture* text_resume_countdown_texture;
     vector2i_t text_resume_countdown_size;
 
+    TTF_Text* text_options_title;
+    TTF_Text* text_options_volume_label;
+    TTF_Text* text_options_mute_label;
+    TTF_Text* text_options_back_button;
+
+    TTF_Text* text_options_volume_value;
+    char text_options_volume_value_buffer[16];
+
     Uint64 resume_countdown_end_ms;
     int resume_countdown_value;
 } snake_t;
 
 bool snake_create(snake_t* snake, const char* title);
 void snake_destroy(snake_t* snake);
+bool snake_apply_audio_settings(snake_t* snake);
+bool snake_save_config(snake_t* snake);
 
 void snake_handle_events(snake_t* snake);
 void snake_update_fixed(snake_t* snake);
