@@ -22,6 +22,20 @@ My take on the classic snake game, built using C99, CMake and SDL3.
 - Avoid running into yourself, or it's game over!
 - Walls will wrap around to the other side of the screen.
 - Use `esc` to pause and unpause the game.
+- Use the Options button on the start or pause menus to adjust volume or mute.
+
+## Config
+
+The game writes a `config.ini` file next to the executable on all platforms. If the file is missing or invalid, it is
+recreated with defaults.
+
+Example:
+
+```
+high_score=12
+mute=0
+volume=0.80
+```
 
 ## Building
 
