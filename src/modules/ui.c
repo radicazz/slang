@@ -76,6 +76,12 @@ void ui_panel_layout_from_content(ui_panel_t* panel, const vector2i_t* screen_si
 
     panel->rect.w = (float)content_size->x + padding_x * 2.f;
     panel->rect.h = (float)content_size->y + padding_y * 2.f;
+
+    const float min_width = (float)screen_size->x * 0.75f;
+    if (panel->rect.w < min_width) {
+        panel->rect.w = min_width;
+    }
+
     panel->rect.x = ((float)screen_size->x - panel->rect.w) * 0.5f;
     panel->rect.y = ((float)screen_size->y - panel->rect.h) * 0.5f;
 }
