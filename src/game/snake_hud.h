@@ -43,6 +43,9 @@ typedef struct {
     char text_options_volume_value_buffer[16];
     TTF_Text* text_options_resume_value;
     char text_options_resume_value_buffer[8];
+
+    Uint64 menu_fade_start_ms;
+    float menu_fade_alpha;
 } snake_hud_t;
 
 bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config);
@@ -55,5 +58,7 @@ bool snake_hud_update_resume_countdown(snake_hud_t* hud, window_t* window, int s
 bool snake_hud_update_start_high_score(snake_hud_t* hud, window_t* window, size_t high_score);
 bool snake_hud_update_options_volume(snake_hud_t* hud, window_t* window, float volume);
 bool snake_hud_update_options_resume_delay(snake_hud_t* hud, window_t* window, int resume_delay_seconds);
+
+void snake_hud_start_menu_fade(snake_hud_t* hud);
 
 #endif  // SNAKE_HUD_H

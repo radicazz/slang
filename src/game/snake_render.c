@@ -8,14 +8,14 @@
 static const SDL_Color k_color_menu_overlay = {0, 0, 0, 160};
 static const SDL_Color k_color_menu_panel = {25, 25, 25, 220};
 static const SDL_Color k_color_menu_panel_border = {80, 80, 80, 255};
-static const SDL_Color k_color_menu_button = {220, 220, 220, 255};
-static const SDL_Color k_color_menu_button_border = {180, 180, 180, 255};
+static const SDL_Color k_color_menu_button = {45, 45, 45, 255};
+static const SDL_Color k_color_menu_button_border = {100, 100, 100, 255};
 static const SDL_Color k_color_menu_checkbox = {30, 30, 30, 255};
-static const SDL_Color k_color_menu_checkbox_border = {180, 180, 180, 255};
-static const SDL_Color k_color_menu_checkbox_check = {220, 220, 220, 255};
+static const SDL_Color k_color_menu_checkbox_border = {100, 100, 100, 255};
+static const SDL_Color k_color_menu_checkbox_check = {180, 180, 180, 255};
 static const SDL_Color k_color_menu_slider_track = {40, 40, 40, 255};
-static const SDL_Color k_color_menu_slider_fill = {100, 200, 120, 255};
-static const SDL_Color k_color_menu_slider_knob = {230, 230, 230, 255};
+static const SDL_Color k_color_menu_slider_fill = {80, 160, 100, 255};
+static const SDL_Color k_color_menu_slider_knob = {180, 180, 180, 255};
 
 static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, const char* label) {
     SDL_assert(snake != NULL);
@@ -84,6 +84,20 @@ void snake_render_frame(snake_t* snake) {
 
     if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START ||
         snake->state == SNAKE_STATE_RESUMING || snake->state == SNAKE_STATE_GAME_OVER) {
+        const Uint64 current_time = SDL_GetTicks();
+        const Uint64 fade_duration_ms = 250;
+        Uint64 elapsed = 0;
+
+        if (current_time > snake->hud.menu_fade_start_ms) {
+            elapsed = current_time - snake->hud.menu_fade_start_ms;
+        }
+
+        float fade_alpha = 1.0f;
+        if (elapsed < fade_duration_ms) {
+            fade_alpha = (float)elapsed / (float)fade_duration_ms;
+        }
+        snake->hud.menu_fade_alpha = fade_alpha;
+
         TTF_Text* title_text = NULL;
         TTF_Text* subtitle_text = NULL;
         bool has_subtitle = false;
@@ -121,13 +135,13 @@ void snake_render_frame(snake_t* snake) {
             }
         } else if (snake->state == SNAKE_STATE_START) {
             if (snake_menu_get_layout_with_secondary_button(snake, title_text, subtitle_text, has_subtitle, button_text,
-                                                            has_button, snake->hud.text_options_button, true, &layout) ==
-                false) {
+                                                            has_button, snake->hud.text_options_button, true,
+                                                            &layout) == false) {
                 return;
             }
         } else {
-            if (snake_menu_get_layout(snake, title_text, subtitle_text, has_subtitle, button_text, has_button, &layout) ==
-                false) {
+            if (snake_menu_get_layout(snake, title_text, subtitle_text, has_subtitle, button_text, has_button,
+                                      &layout) == false) {
                 return;
             }
         }
@@ -138,8 +152,9 @@ void snake_render_frame(snake_t* snake) {
             return;
         }
 
+        const Uint8 overlay_alpha = (Uint8)(k_color_menu_overlay.a * snake->hud.menu_fade_alpha);
         SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_menu_overlay.r, k_color_menu_overlay.g,
-                               k_color_menu_overlay.b, k_color_menu_overlay.a);
+                               k_color_menu_overlay.b, overlay_alpha);
 
         SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size.x, (float)screen_size.y};
         SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
@@ -147,6 +162,8 @@ void snake_render_frame(snake_t* snake) {
         ui_panel_t panel;
         ui_panel_init(&panel, k_color_menu_panel, k_color_menu_panel_border);
         panel.rect = layout.panel_rect;
+        panel.fill_color.a = (Uint8)(k_color_menu_panel.a * snake->hud.menu_fade_alpha);
+        panel.border_color.a = (Uint8)(k_color_menu_panel_border.a * snake->hud.menu_fade_alpha);
         if (ui_panel_render(snake->window.sdl_renderer, &panel) == false) {
             SDL_Log("Failed to render menu panel: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -157,6 +174,8 @@ void snake_render_frame(snake_t* snake) {
         if (layout.has_button == true) {
             ui_button_init(&button, k_color_menu_button, k_color_menu_button_border);
             button.rect = layout.button_rect;
+            button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
+            button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
             if (ui_button_render(snake->window.sdl_renderer, &button) == false) {
                 SDL_Log("Failed to render menu button: %s", SDL_GetError());
                 snake->window.is_running = false;
@@ -179,8 +198,7 @@ void snake_render_frame(snake_t* snake) {
             }
             float countdown_x = (float)(screen_size.x - snake->hud.text_resume_countdown_size.x) * 0.5f;
             float countdown_y = layout.title_pos.y + 60.f;
-            SDL_FRect dst = {countdown_x, countdown_y,
-                             (float)snake->hud.text_resume_countdown_size.x,
+            SDL_FRect dst = {countdown_x, countdown_y, (float)snake->hud.text_resume_countdown_size.x,
                              (float)snake->hud.text_resume_countdown_size.y};
             if (SDL_RenderTexture(snake->window.sdl_renderer, snake->hud.text_resume_countdown_texture, NULL, &dst) ==
                 false) {
@@ -221,6 +239,8 @@ void snake_render_frame(snake_t* snake) {
             ui_button_t options_button;
             ui_button_init(&options_button, k_color_menu_button, k_color_menu_button_border);
             options_button.rect = layout.secondary_button_rect;
+            options_button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
+            options_button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
             if (ui_button_render(snake->window.sdl_renderer, &options_button) == false) {
                 SDL_Log("Failed to render options button: %s", SDL_GetError());
                 snake->window.is_running = false;
@@ -246,6 +266,8 @@ void snake_render_frame(snake_t* snake) {
             ui_button_t exit_button;
             ui_button_init(&exit_button, k_color_menu_button, k_color_menu_button_border);
             exit_button.rect = layout.tertiary_button_rect;
+            exit_button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
+            exit_button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
             if (ui_button_render(snake->window.sdl_renderer, &exit_button) == false) {
                 SDL_Log("Failed to render exit button: %s", SDL_GetError());
                 snake->window.is_running = false;
@@ -270,6 +292,20 @@ void snake_render_frame(snake_t* snake) {
     }
 
     if (snake->state == SNAKE_STATE_OPTIONS) {
+        const Uint64 current_time = SDL_GetTicks();
+        const Uint64 fade_duration_ms = 250;
+        Uint64 elapsed = 0;
+
+        if (current_time > snake->hud.menu_fade_start_ms) {
+            elapsed = current_time - snake->hud.menu_fade_start_ms;
+        }
+
+        float fade_alpha = 1.0f;
+        if (elapsed < fade_duration_ms) {
+            fade_alpha = (float)elapsed / (float)fade_duration_ms;
+        }
+        snake->hud.menu_fade_alpha = fade_alpha;
+
         vector2i_t screen_size_options;
         if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size_options.x,
                                            &screen_size_options.y) == false) {
@@ -284,8 +320,9 @@ void snake_render_frame(snake_t* snake) {
             return;
         }
 
+        const Uint8 overlay_alpha_options = (Uint8)(k_color_menu_overlay.a * snake->hud.menu_fade_alpha);
         SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_menu_overlay.r, k_color_menu_overlay.g,
-                               k_color_menu_overlay.b, k_color_menu_overlay.a);
+                               k_color_menu_overlay.b, overlay_alpha_options);
         SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size_options.x, (float)screen_size_options.y};
         SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
 
@@ -332,11 +369,11 @@ void snake_render_frame(snake_t* snake) {
         const float row_gap = 14.f;
         const float row_height = SDL_max(slider_height + 8.f, checkbox_size);
 
-        const float volume_row_width = (float)volume_label_size.x + content_gap + slider_width + content_gap +
-                                       (float)volume_value_size.x;
+        const float volume_row_width =
+            (float)volume_label_size.x + content_gap + slider_width + content_gap + (float)volume_value_size.x;
         const float mute_row_width = (float)mute_label_size.x + content_gap + checkbox_size;
-        const float resume_row_width = (float)resume_label_size.x + content_gap + slider_width + content_gap +
-                                       (float)resume_value_size.x;
+        const float resume_row_width =
+            (float)resume_label_size.x + content_gap + slider_width + content_gap + (float)resume_value_size.x;
         const float back_button_width = (float)back_label_size.x + 56.f;
 
         float content_width = SDL_max((float)title_size.x, volume_row_width);
@@ -351,6 +388,8 @@ void snake_render_frame(snake_t* snake) {
         ui_panel_init(&panel, k_color_menu_panel, k_color_menu_panel_border);
         vector2i_t content_size = {(int)(content_width + 0.5f), (int)(content_height + 0.5f)};
         ui_panel_layout_from_content(&panel, &screen_size_options, &content_size, 20.f, 20.f);
+        panel.fill_color.a = (Uint8)(k_color_menu_panel.a * snake->hud.menu_fade_alpha);
+        panel.border_color.a = (Uint8)(k_color_menu_panel_border.a * snake->hud.menu_fade_alpha);
 
         if (ui_panel_render(snake->window.sdl_renderer, &panel) == false) {
             SDL_Log("Failed to render options panel: %s", SDL_GetError());
@@ -374,8 +413,8 @@ void snake_render_frame(snake_t* snake) {
         const float row_center_y = cursor_y + row_height * 0.5f;
         float cursor_x = row_left;
 
-        if (TTF_DrawRendererText(snake->hud.text_options_volume_label, cursor_x, row_center_y - volume_label_size.y * 0.5f) ==
-            false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_volume_label, cursor_x,
+                                 row_center_y - volume_label_size.y * 0.5f) == false) {
             SDL_Log("Failed to render volume label text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
@@ -386,7 +425,12 @@ void snake_render_frame(snake_t* snake) {
         ui_slider_t slider;
         ui_slider_init(&slider, k_color_menu_slider_track, k_color_menu_slider_fill, k_color_menu_slider_knob,
                        k_color_menu_button_border);
-        ui_slider_layout(&slider, cursor_x + slider_width * 0.5f, row_center_y, slider_width, slider_height, knob_width);
+        ui_slider_layout(&slider, cursor_x + slider_width * 0.5f, row_center_y, slider_width, slider_height,
+                         knob_width);
+        slider.track_color.a = (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
+        slider.fill_color.a = (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
+        slider.knob_color.a = (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
+        slider.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
         if (ui_slider_render(snake->window.sdl_renderer, &slider, snake->config.volume) == false) {
             SDL_Log("Failed to render volume slider: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -405,8 +449,8 @@ void snake_render_frame(snake_t* snake) {
         const float mute_row_center_y = cursor_y + row_height * 0.5f;
         cursor_x = row_left;
 
-        if (TTF_DrawRendererText(snake->hud.text_options_mute_label, cursor_x, mute_row_center_y - mute_label_size.y * 0.5f) ==
-            false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_mute_label, cursor_x,
+                                 mute_row_center_y - mute_label_size.y * 0.5f) == false) {
             SDL_Log("Failed to render mute label text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
@@ -416,6 +460,9 @@ void snake_render_frame(snake_t* snake) {
         ui_checkbox_t checkbox;
         ui_checkbox_init(&checkbox, k_color_menu_checkbox, k_color_menu_checkbox_border, k_color_menu_checkbox_check);
         ui_checkbox_layout(&checkbox, cursor_x, mute_row_center_y, checkbox_size);
+        checkbox.fill_color.a = (Uint8)(k_color_menu_checkbox.a * snake->hud.menu_fade_alpha);
+        checkbox.border_color.a = (Uint8)(k_color_menu_checkbox_border.a * snake->hud.menu_fade_alpha);
+        checkbox.check_color.a = (Uint8)(k_color_menu_checkbox_check.a * snake->hud.menu_fade_alpha);
         if (ui_checkbox_render(snake->window.sdl_renderer, &checkbox, snake->config.mute) == false) {
             SDL_Log("Failed to render mute checkbox: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -435,10 +482,15 @@ void snake_render_frame(snake_t* snake) {
 
         cursor_x += (float)resume_label_size.x + content_gap;
         ui_slider_int_t resume_slider;
-        ui_slider_int_init(&resume_slider, k_color_menu_slider_track, k_color_menu_slider_fill, k_color_menu_slider_knob,
-                           k_color_menu_button_border, CONFIG_RESUME_DELAY_MIN, CONFIG_RESUME_DELAY_MAX);
+        ui_slider_int_init(&resume_slider, k_color_menu_slider_track, k_color_menu_slider_fill,
+                           k_color_menu_slider_knob, k_color_menu_button_border, CONFIG_RESUME_DELAY_MIN,
+                           CONFIG_RESUME_DELAY_MAX);
         ui_slider_int_layout(&resume_slider, cursor_x + slider_width * 0.5f, resume_row_center_y, slider_width,
                              slider_height, knob_width);
+        resume_slider.slider.track_color.a = (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
+        resume_slider.slider.fill_color.a = (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
+        resume_slider.slider.knob_color.a = (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
+        resume_slider.slider.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
         if (ui_slider_int_render(snake->window.sdl_renderer, &resume_slider, snake->config.resume_delay_seconds) ==
             false) {
             SDL_Log("Failed to render resume delay slider: %s", SDL_GetError());
@@ -457,8 +509,10 @@ void snake_render_frame(snake_t* snake) {
         cursor_y += row_height + row_gap;
         ui_button_t back_button;
         ui_button_init(&back_button, k_color_menu_button, k_color_menu_button_border);
-        ui_button_layout_from_label(&back_button, &back_label_size, center_x, cursor_y + back_label_size.y * 0.5f,
-                                    28.f, 12.f);
+        ui_button_layout_from_label(&back_button, &back_label_size, center_x, cursor_y + back_label_size.y * 0.5f, 28.f,
+                                    12.f);
+        back_button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
+        back_button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
         if (ui_button_render(snake->window.sdl_renderer, &back_button) == false) {
             SDL_Log("Failed to render options back button: %s", SDL_GetError());
             snake->window.is_running = false;

@@ -19,9 +19,8 @@ static bool create_resume_countdown_text(snake_hud_t* hud, window_t* window, siz
     hud->text_resume_countdown_size.y = 0;
 
     SDL_Log("create_resume_countdown_text: rendering surface");
-    SDL_Surface* surface =
-        TTF_RenderText_Blended(window->ttf_font_default, hud->text_resume_countdown_buffer, length,
-                               (SDL_Color){255, 255, 255, 255});
+    SDL_Surface* surface = TTF_RenderText_Blended(window->ttf_font_default, hud->text_resume_countdown_buffer, length,
+                                                  (SDL_Color){255, 255, 255, 255});
     if (surface == NULL) {
         SDL_Log("Failed to render resume countdown surface: %s", SDL_GetError());
         return false;
@@ -58,14 +57,17 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
 
     memset(hud, 0, sizeof(*hud));
 
+    hud->menu_fade_start_ms = 0;
+    hud->menu_fade_alpha = 0.0f;
+
     const int written = snprintf(hud->text_score_buffer, sizeof(hud->text_score_buffer), "Score: 0");
     if (written < 0 || (size_t)written >= sizeof(hud->text_score_buffer)) {
         SDL_Log("Failed to format initial score text");
         return false;
     }
 
-    hud->text_score = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                     hud->text_score_buffer, (size_t)written);
+    hud->text_score =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, hud->text_score_buffer, (size_t)written);
     if (hud->text_score == NULL) {
         SDL_Log("Failed to create score text object: %s", SDL_GetError());
         return false;
@@ -82,8 +84,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
         return false;
     }
 
-    hud->text_pause = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                     hud->text_pause_buffer, (size_t)pause_written);
+    hud->text_pause = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, hud->text_pause_buffer,
+                                     (size_t)pause_written);
     if (hud->text_pause == NULL) {
         SDL_Log("Failed to create pause text object: %s", SDL_GetError());
         return false;
@@ -95,34 +97,34 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* resume_label = "Resume";
-    hud->text_resume = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, resume_label,
-                                      SDL_strlen(resume_label));
+    hud->text_resume =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, resume_label, SDL_strlen(resume_label));
     if (hud->text_resume == NULL) {
         SDL_Log("Failed to create resume text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_resume, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_resume, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set resume text color: %s", SDL_GetError());
         return false;
     }
 
     const char* exit_label = "Exit";
-    hud->text_exit_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, exit_label,
-                                           SDL_strlen(exit_label));
+    hud->text_exit_button =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, exit_label, SDL_strlen(exit_label));
     if (hud->text_exit_button == NULL) {
         SDL_Log("Failed to create exit button text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_exit_button, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_exit_button, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set exit button text color: %s", SDL_GetError());
         return false;
     }
 
     const char* start_title = "Start Game";
-    hud->text_start_title = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, start_title,
-                                           SDL_strlen(start_title));
+    hud->text_start_title =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, start_title, SDL_strlen(start_title));
     if (hud->text_start_title == NULL) {
         SDL_Log("Failed to create start title text object: %s", SDL_GetError());
         return false;
@@ -134,27 +136,27 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* start_label = "Start";
-    hud->text_start_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                            start_label, SDL_strlen(start_label));
+    hud->text_start_button =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, start_label, SDL_strlen(start_label));
     if (hud->text_start_button == NULL) {
         SDL_Log("Failed to create start button text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_start_button, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_start_button, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set start button text color: %s", SDL_GetError());
         return false;
     }
 
     const char* options_label = "Options";
-    hud->text_options_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                              options_label, SDL_strlen(options_label));
+    hud->text_options_button =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, options_label, SDL_strlen(options_label));
     if (hud->text_options_button == NULL) {
         SDL_Log("Failed to create options button text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_options_button, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_options_button, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set options button text color: %s", SDL_GetError());
         return false;
     }
@@ -164,8 +166,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* game_over_title = "Game Over";
-    hud->text_game_over_title = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                               game_over_title, SDL_strlen(game_over_title));
+    hud->text_game_over_title =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, game_over_title, SDL_strlen(game_over_title));
     if (hud->text_game_over_title == NULL) {
         SDL_Log("Failed to create game over title text object: %s", SDL_GetError());
         return false;
@@ -200,21 +202,21 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* restart_label = "Restart";
-    hud->text_restart_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                              restart_label, SDL_strlen(restart_label));
+    hud->text_restart_button =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, restart_label, SDL_strlen(restart_label));
     if (hud->text_restart_button == NULL) {
         SDL_Log("Failed to create restart button text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_restart_button, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_restart_button, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set restart button text color: %s", SDL_GetError());
         return false;
     }
 
     const char* resume_title = "Resuming";
-    hud->text_resume_title = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                            resume_title, SDL_strlen(resume_title));
+    hud->text_resume_title =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, resume_title, SDL_strlen(resume_title));
     if (hud->text_resume_title == NULL) {
         SDL_Log("Failed to create resume title text object: %s", SDL_GetError());
         return false;
@@ -237,8 +239,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* options_title = "Options";
-    hud->text_options_title = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                             options_title, SDL_strlen(options_title));
+    hud->text_options_title =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, options_title, SDL_strlen(options_title));
     if (hud->text_options_title == NULL) {
         SDL_Log("Failed to create options title text object: %s", SDL_GetError());
         return false;
@@ -250,8 +252,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* volume_label = "Volume";
-    hud->text_options_volume_label = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                                    volume_label, SDL_strlen(volume_label));
+    hud->text_options_volume_label =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, volume_label, SDL_strlen(volume_label));
     if (hud->text_options_volume_label == NULL) {
         SDL_Log("Failed to create volume label text object: %s", SDL_GetError());
         return false;
@@ -263,8 +265,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* mute_label = "Mute";
-    hud->text_options_mute_label = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                                  mute_label, SDL_strlen(mute_label));
+    hud->text_options_mute_label =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, mute_label, SDL_strlen(mute_label));
     if (hud->text_options_mute_label == NULL) {
         SDL_Log("Failed to create mute label text object: %s", SDL_GetError());
         return false;
@@ -276,9 +278,8 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* resume_delay_label = "Resume Delay";
-    hud->text_options_resume_label =
-        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, resume_delay_label,
-                       SDL_strlen(resume_delay_label));
+    hud->text_options_resume_label = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
+                                                    resume_delay_label, SDL_strlen(resume_delay_label));
     if (hud->text_options_resume_label == NULL) {
         SDL_Log("Failed to create resume delay label text object: %s", SDL_GetError());
         return false;
@@ -290,14 +291,14 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
     }
 
     const char* back_label = "Back";
-    hud->text_options_back_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                                                   back_label, SDL_strlen(back_label));
+    hud->text_options_back_button =
+        TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, back_label, SDL_strlen(back_label));
     if (hud->text_options_back_button == NULL) {
         SDL_Log("Failed to create back button text object: %s", SDL_GetError());
         return false;
     }
 
-    if (TTF_SetTextColor(hud->text_options_back_button, 20, 20, 20, 255) == false) {
+    if (TTF_SetTextColor(hud->text_options_back_button, 220, 220, 220, 255) == false) {
         SDL_Log("Failed to set back button text color: %s", SDL_GetError());
         return false;
     }
@@ -459,9 +460,8 @@ bool snake_hud_update_game_over(snake_hud_t* hud, size_t score, size_t high_scor
     SDL_assert(hud != NULL);
     SDL_assert(hud->text_game_over_score != NULL);
 
-    const int written =
-        snprintf(hud->text_game_over_score_buffer, sizeof(hud->text_game_over_score_buffer),
-                 "Final Score: %zu | High Score: %zu", score, high_score);
+    const int written = snprintf(hud->text_game_over_score_buffer, sizeof(hud->text_game_over_score_buffer),
+                                 "Final Score: %zu | High Score: %zu", score, high_score);
     if (written < 0 || (size_t)written >= sizeof(hud->text_game_over_score_buffer)) {
         SDL_Log("Failed to format game over score text.");
         return false;
@@ -487,9 +487,8 @@ bool snake_hud_update_start_high_score(snake_hud_t* hud, window_t* window, size_
     }
 
     if (hud->text_start_high_score == NULL) {
-        hud->text_start_high_score =
-            TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                           hud->text_start_high_score_buffer, (size_t)written);
+        hud->text_start_high_score = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
+                                                    hud->text_start_high_score_buffer, (size_t)written);
         if (hud->text_start_high_score == NULL) {
             SDL_Log("Failed to create start high score text object: %s", SDL_GetError());
             return false;
@@ -500,8 +499,7 @@ bool snake_hud_update_start_high_score(snake_hud_t* hud, window_t* window, size_
         }
     }
 
-    if (TTF_SetTextString(hud->text_start_high_score, hud->text_start_high_score_buffer, (size_t)written) ==
-        false) {
+    if (TTF_SetTextString(hud->text_start_high_score, hud->text_start_high_score_buffer, (size_t)written) == false) {
         SDL_Log("Failed to update start high score text: %s", SDL_GetError());
         return false;
     }
@@ -513,17 +511,16 @@ bool snake_hud_update_options_volume(snake_hud_t* hud, window_t* window, float v
     SDL_assert(hud != NULL);
     SDL_assert(window != NULL);
 
-    const int written = snprintf(hud->text_options_volume_value_buffer,
-                                 sizeof(hud->text_options_volume_value_buffer), "%.2f", volume);
+    const int written =
+        snprintf(hud->text_options_volume_value_buffer, sizeof(hud->text_options_volume_value_buffer), "%.2f", volume);
     if (written < 0 || (size_t)written >= sizeof(hud->text_options_volume_value_buffer)) {
         SDL_Log("Failed to format options volume value.");
         return false;
     }
 
     if (hud->text_options_volume_value == NULL) {
-        hud->text_options_volume_value =
-            TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                           hud->text_options_volume_value_buffer, (size_t)written);
+        hud->text_options_volume_value = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
+                                                        hud->text_options_volume_value_buffer, (size_t)written);
         if (hud->text_options_volume_value == NULL) {
             SDL_Log("Failed to create options volume value text: %s", SDL_GetError());
             return false;
@@ -547,18 +544,16 @@ bool snake_hud_update_options_resume_delay(snake_hud_t* hud, window_t* window, i
     SDL_assert(hud != NULL);
     SDL_assert(window != NULL);
 
-    const int written = snprintf(hud->text_options_resume_value_buffer,
-                                 sizeof(hud->text_options_resume_value_buffer), "%d",
-                                 resume_delay_seconds);
+    const int written = snprintf(hud->text_options_resume_value_buffer, sizeof(hud->text_options_resume_value_buffer),
+                                 "%d", resume_delay_seconds);
     if (written < 0 || (size_t)written >= sizeof(hud->text_options_resume_value_buffer)) {
         SDL_Log("Failed to format options resume delay.");
         return false;
     }
 
     if (hud->text_options_resume_value == NULL) {
-        hud->text_options_resume_value =
-            TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
-                           hud->text_options_resume_value_buffer, (size_t)written);
+        hud->text_options_resume_value = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default,
+                                                        hud->text_options_resume_value_buffer, (size_t)written);
         if (hud->text_options_resume_value == NULL) {
             SDL_Log("Failed to create resume delay value text: %s", SDL_GetError());
             return false;
@@ -586,11 +581,18 @@ bool snake_hud_update_resume_countdown(snake_hud_t* hud, window_t* window, int s
         seconds = 0;
     }
 
-    const int written = snprintf(hud->text_resume_countdown_buffer, sizeof(hud->text_resume_countdown_buffer), "%d", seconds);
+    const int written =
+        snprintf(hud->text_resume_countdown_buffer, sizeof(hud->text_resume_countdown_buffer), "%d", seconds);
     if (written < 0 || (size_t)written >= sizeof(hud->text_resume_countdown_buffer)) {
         SDL_Log("Failed to format resume countdown text.");
         return false;
     }
 
     return create_resume_countdown_text(hud, window, (size_t)written);
+}
+
+void snake_hud_start_menu_fade(snake_hud_t* hud) {
+    SDL_assert(hud != NULL);
+    hud->menu_fade_start_ms = SDL_GetTicks();
+    hud->menu_fade_alpha = 0.0f;
 }

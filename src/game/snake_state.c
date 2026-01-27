@@ -317,13 +317,13 @@ void snake_state_begin_resume(snake_t* snake) {
     SDL_assert(snake != NULL);
 
     snake->state = SNAKE_STATE_RESUMING;
+    snake_hud_start_menu_fade(&snake->hud);
     if (snake->config.resume_delay_seconds <= 0) {
         snake->state = SNAKE_STATE_PLAYING;
         return;
     }
 
-    snake->resume_countdown_end_ms =
-        SDL_GetTicks() + (Uint64)(snake->config.resume_delay_seconds * 1000);
+    snake->resume_countdown_end_ms = SDL_GetTicks() + (Uint64)(snake->config.resume_delay_seconds * 1000);
     snake->resume_countdown_value = -1;
 
     const int seconds = get_resume_seconds_remaining(SDL_GetTicks(), snake->resume_countdown_end_ms);
@@ -344,11 +344,13 @@ void snake_state_begin_options(snake_t* snake, snake_game_state_t return_state) 
         snake->window.is_running = false;
         return;
     }
-    if (snake_hud_update_options_resume_delay(&snake->hud, &snake->window, snake->config.resume_delay_seconds) == false) {
+    if (snake_hud_update_options_resume_delay(&snake->hud, &snake->window, snake->config.resume_delay_seconds) ==
+        false) {
         snake->window.is_running = false;
         return;
     }
     snake->state = SNAKE_STATE_OPTIONS;
+    snake_hud_start_menu_fade(&snake->hud);
 }
 
 void snake_update_fixed(snake_t* snake) {
@@ -380,6 +382,7 @@ void snake_update_fixed(snake_t* snake) {
     if (test_body_collision(snake) == true) {
         SDL_Log("Collision detected! Score: %zu", snake->array_body.size);
         snake->state = SNAKE_STATE_GAME_OVER;
+        snake_hud_start_menu_fade(&snake->hud);
         if (snake->array_body.size > snake->config.high_score) {
             snake->config.high_score = snake->array_body.size;
             if (snake_save_config(snake) == false) {
