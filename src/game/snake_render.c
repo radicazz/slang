@@ -69,14 +69,14 @@ void snake_render_frame(snake_t* snake) {
     }
 
     vector2i_t text_size;
-    if (TTF_GetTextSize(snake->text_score, &text_size.x, &text_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_score, &text_size.x, &text_size.y) == false) {
         SDL_Log("Failed to measure score text: %s", SDL_GetError());
         snake->window.is_running = false;
         return;
     }
 
     // Render the score text at the top center of the screen.
-    if (TTF_DrawRendererText(snake->text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f) == false) {
+    if (TTF_DrawRendererText(snake->hud.text_score, (float)(screen_size.x - text_size.x) * 0.5f, 10.f) == false) {
         SDL_Log("Failed to render score text: %s", SDL_GetError());
         snake->window.is_running = false;
         return;
@@ -91,31 +91,31 @@ void snake_render_frame(snake_t* snake) {
         bool has_button = false;
 
         if (snake->state == SNAKE_STATE_PAUSED) {
-            title_text = snake->text_pause;
-            button_text = snake->text_resume;
+            title_text = snake->hud.text_pause;
+            button_text = snake->hud.text_resume;
             has_button = true;
         } else if (snake->state == SNAKE_STATE_START) {
-            title_text = snake->text_start_title;
-            subtitle_text = snake->text_start_high_score;
+            title_text = snake->hud.text_start_title;
+            subtitle_text = snake->hud.text_start_high_score;
             has_subtitle = true;
-            button_text = snake->text_start_button;
+            button_text = snake->hud.text_start_button;
             has_button = true;
         } else if (snake->state == SNAKE_STATE_RESUMING) {
-            title_text = snake->text_resume_title;
-            subtitle_text = snake->text_resume_countdown;
-            has_subtitle = true;
+            title_text = snake->hud.text_resume_title;
+            subtitle_text = NULL;
+            has_subtitle = false;
         } else {
-            title_text = snake->text_game_over_title;
-            subtitle_text = snake->text_game_over_score;
+            title_text = snake->hud.text_game_over_title;
+            subtitle_text = snake->hud.text_game_over_score;
             has_subtitle = true;
-            button_text = snake->text_restart_button;
+            button_text = snake->hud.text_restart_button;
             has_button = true;
         }
 
         snake_menu_layout_t layout;
         if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START) {
             if (snake_menu_get_layout_with_secondary_button(snake, title_text, subtitle_text, has_subtitle, button_text,
-                                                            has_button, snake->text_options_button, true, &layout) ==
+                                                            has_button, snake->hud.text_options_button, true, &layout) ==
                 false) {
                 return;
             }
@@ -164,23 +164,29 @@ void snake_render_frame(snake_t* snake) {
             return;
         }
 
-        if (layout.has_subtitle == true) {
-            if (snake->state == SNAKE_STATE_RESUMING && snake->text_resume_countdown_texture != NULL) {
-                SDL_FRect dst = {layout.subtitle_pos.x, layout.subtitle_pos.y,
-                                 (float)snake->text_resume_countdown_size.x,
-                                 (float)snake->text_resume_countdown_size.y};
-                if (SDL_RenderTexture(snake->window.sdl_renderer, snake->text_resume_countdown_texture, NULL, &dst) ==
-                    false) {
-                    SDL_Log("Failed to render resume countdown texture: %s", SDL_GetError());
-                    snake->window.is_running = false;
-                    return;
-                }
-            } else {
-                if (TTF_DrawRendererText(subtitle_text, layout.subtitle_pos.x, layout.subtitle_pos.y) == false) {
-                    SDL_Log("Failed to render menu subtitle text: %s", SDL_GetError());
-                    snake->window.is_running = false;
-                    return;
-                }
+        if (snake->state == SNAKE_STATE_RESUMING && snake->hud.text_resume_countdown_texture != NULL) {
+            vector2i_t screen_size;
+            if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
+                SDL_Log("Failed to query render output size: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+            float countdown_x = (float)(screen_size.x - snake->hud.text_resume_countdown_size.x) * 0.5f;
+            float countdown_y = layout.title_pos.y + 60.f;
+            SDL_FRect dst = {countdown_x, countdown_y,
+                             (float)snake->hud.text_resume_countdown_size.x,
+                             (float)snake->hud.text_resume_countdown_size.y};
+            if (SDL_RenderTexture(snake->window.sdl_renderer, snake->hud.text_resume_countdown_texture, NULL, &dst) ==
+                false) {
+                SDL_Log("Failed to render resume countdown texture: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+        } else if (layout.has_subtitle == true) {
+            if (TTF_DrawRendererText(subtitle_text, layout.subtitle_pos.x, layout.subtitle_pos.y) == false) {
+                SDL_Log("Failed to render menu subtitle text: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
             }
         }
 
@@ -202,7 +208,7 @@ void snake_render_frame(snake_t* snake) {
 
         if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START) {
             vector2i_t options_text_size;
-            if (get_text_size(snake, snake->text_options_button, &options_text_size, "options button") == false) {
+            if (get_text_size(snake, snake->hud.text_options_button, &options_text_size, "options button") == false) {
                 return;
             }
 
@@ -218,7 +224,7 @@ void snake_render_frame(snake_t* snake) {
             float options_text_x = 0.f;
             float options_text_y = 0.f;
             ui_button_get_label_position(&options_button, &options_text_size, &options_text_x, &options_text_y);
-            if (TTF_DrawRendererText(snake->text_options_button, options_text_x, options_text_y) == false) {
+            if (TTF_DrawRendererText(snake->hud.text_options_button, options_text_x, options_text_y) == false) {
                 SDL_Log("Failed to render options button text: %s", SDL_GetError());
                 snake->window.is_running = false;
                 return;
@@ -253,37 +259,37 @@ void snake_render_frame(snake_t* snake) {
         SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
 
         vector2i_t title_size;
-        if (get_text_size(snake, snake->text_options_title, &title_size, "options title") == false) {
+        if (get_text_size(snake, snake->hud.text_options_title, &title_size, "options title") == false) {
             return;
         }
 
         vector2i_t volume_label_size;
-        if (get_text_size(snake, snake->text_options_volume_label, &volume_label_size, "volume label") == false) {
+        if (get_text_size(snake, snake->hud.text_options_volume_label, &volume_label_size, "volume label") == false) {
             return;
         }
 
         vector2i_t volume_value_size;
-        if (get_text_size(snake, snake->text_options_volume_value, &volume_value_size, "volume value") == false) {
+        if (get_text_size(snake, snake->hud.text_options_volume_value, &volume_value_size, "volume value") == false) {
             return;
         }
 
         vector2i_t mute_label_size;
-        if (get_text_size(snake, snake->text_options_mute_label, &mute_label_size, "mute label") == false) {
+        if (get_text_size(snake, snake->hud.text_options_mute_label, &mute_label_size, "mute label") == false) {
             return;
         }
 
         vector2i_t resume_label_size;
-        if (get_text_size(snake, snake->text_options_resume_label, &resume_label_size, "resume label") == false) {
+        if (get_text_size(snake, snake->hud.text_options_resume_label, &resume_label_size, "resume label") == false) {
             return;
         }
 
         vector2i_t resume_value_size;
-        if (get_text_size(snake, snake->text_options_resume_value, &resume_value_size, "resume value") == false) {
+        if (get_text_size(snake, snake->hud.text_options_resume_value, &resume_value_size, "resume value") == false) {
             return;
         }
 
         vector2i_t back_label_size;
-        if (get_text_size(snake, snake->text_options_back_button, &back_label_size, "back button") == false) {
+        if (get_text_size(snake, snake->hud.text_options_back_button, &back_label_size, "back button") == false) {
             return;
         }
 
@@ -324,7 +330,7 @@ void snake_render_frame(snake_t* snake) {
         float cursor_y = panel.rect.y + 20.f;
         const float center_x = panel.rect.x + panel.rect.w * 0.5f;
 
-        if (TTF_DrawRendererText(snake->text_options_title, center_x - (float)title_size.x * 0.5f, cursor_y) ==
+        if (TTF_DrawRendererText(snake->hud.text_options_title, center_x - (float)title_size.x * 0.5f, cursor_y) ==
             false) {
             SDL_Log("Failed to render options title text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -337,7 +343,7 @@ void snake_render_frame(snake_t* snake) {
         const float row_center_y = cursor_y + row_height * 0.5f;
         float cursor_x = row_left;
 
-        if (TTF_DrawRendererText(snake->text_options_volume_label, cursor_x, row_center_y - volume_label_size.y * 0.5f) ==
+        if (TTF_DrawRendererText(snake->hud.text_options_volume_label, cursor_x, row_center_y - volume_label_size.y * 0.5f) ==
             false) {
             SDL_Log("Failed to render volume label text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -357,7 +363,7 @@ void snake_render_frame(snake_t* snake) {
         }
 
         cursor_x += slider_width + content_gap;
-        if (TTF_DrawRendererText(snake->text_options_volume_value, cursor_x,
+        if (TTF_DrawRendererText(snake->hud.text_options_volume_value, cursor_x,
                                  row_center_y - volume_value_size.y * 0.5f) == false) {
             SDL_Log("Failed to render volume value text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -368,7 +374,7 @@ void snake_render_frame(snake_t* snake) {
         const float mute_row_center_y = cursor_y + row_height * 0.5f;
         cursor_x = row_left;
 
-        if (TTF_DrawRendererText(snake->text_options_mute_label, cursor_x, mute_row_center_y - mute_label_size.y * 0.5f) ==
+        if (TTF_DrawRendererText(snake->hud.text_options_mute_label, cursor_x, mute_row_center_y - mute_label_size.y * 0.5f) ==
             false) {
             SDL_Log("Failed to render mute label text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -389,7 +395,7 @@ void snake_render_frame(snake_t* snake) {
         const float resume_row_center_y = cursor_y + row_height * 0.5f;
         cursor_x = row_left;
 
-        if (TTF_DrawRendererText(snake->text_options_resume_label, cursor_x,
+        if (TTF_DrawRendererText(snake->hud.text_options_resume_label, cursor_x,
                                  resume_row_center_y - resume_label_size.y * 0.5f) == false) {
             SDL_Log("Failed to render resume label text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -410,7 +416,7 @@ void snake_render_frame(snake_t* snake) {
         }
 
         cursor_x += slider_width + content_gap;
-        if (TTF_DrawRendererText(snake->text_options_resume_value, cursor_x,
+        if (TTF_DrawRendererText(snake->hud.text_options_resume_value, cursor_x,
                                  resume_row_center_y - resume_value_size.y * 0.5f) == false) {
             SDL_Log("Failed to render resume value text: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -431,7 +437,7 @@ void snake_render_frame(snake_t* snake) {
         float back_label_x = 0.f;
         float back_label_y = 0.f;
         ui_button_get_label_position(&back_button, &back_label_size, &back_label_x, &back_label_y);
-        if (TTF_DrawRendererText(snake->text_options_back_button, back_label_x, back_label_y) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_back_button, back_label_x, back_label_y) == false) {
             SDL_Log("Failed to render options back label: %s", SDL_GetError());
             snake->window.is_running = false;
             return;

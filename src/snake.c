@@ -5,7 +5,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "game/snake_state.h"
-#include "game/snake_text.h"
+#include "game/snake_hud.h"
 #include "modules/config.h"
 
 bool snake_create(snake_t* snake, const char* title) {
@@ -47,8 +47,8 @@ bool snake_create(snake_t* snake, const char* title) {
     dynamic_array_init(&snake->array_food);
     dynamic_array_init(&snake->array_body);
 
-    if (snake_text_create(snake) == false) {
-        SDL_Log("Failed to initialize text resources");
+    if (snake_hud_create(&snake->hud, &snake->window, &snake->config) == false) {
+        SDL_Log("Failed to initialize HUD resources");
         goto fail;
     }
 
@@ -73,7 +73,7 @@ fail:
 void snake_destroy(snake_t* snake) {
     SDL_assert(snake != NULL);
 
-    snake_text_destroy(snake);
+    snake_hud_destroy(&snake->hud);
 
     audio_manager_destroy(&snake->audio);
     window_destroy(&snake->window);

@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_log.h>
 
-#include "snake_text.h"
+#include "snake_hud.h"
 
 static const SDL_Color k_color_empty = {0, 0, 0, 255};
 static const SDL_Color k_color_food = {255, 0, 0, 255};
@@ -263,7 +263,7 @@ bool snake_state_reset(snake_t* snake) {
 
     dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
 
-    if (snake_text_update_score(snake) == false) {
+    if (snake_hud_update_score(&snake->hud, snake->array_body.size) == false) {
         dynamic_array_destroy(&snake->array_food);
         dynamic_array_destroy(&snake->array_body);
         return false;
@@ -327,7 +327,7 @@ void snake_state_begin_resume(snake_t* snake) {
     snake->resume_countdown_value = -1;
 
     const int seconds = get_resume_seconds_remaining(SDL_GetTicks(), snake->resume_countdown_end_ms);
-    if (snake_text_update_resume_countdown(snake, seconds) == false) {
+    if (snake_hud_update_resume_countdown(&snake->hud, &snake->window, seconds) == false) {
         snake->window.is_running = false;
     } else {
         snake->resume_countdown_value = seconds;
@@ -340,7 +340,11 @@ void snake_state_begin_options(snake_t* snake, snake_game_state_t return_state) 
     snake->options_return_state = return_state;
     snake->options_dragging_volume = false;
     snake->options_dragging_resume = false;
-    if (snake_text_update_options_labels(snake) == false) {
+    if (snake_hud_update_options_volume(&snake->hud, &snake->window, snake->config.volume) == false) {
+        snake->window.is_running = false;
+        return;
+    }
+    if (snake_hud_update_options_resume_delay(&snake->hud, &snake->window, snake->config.resume_delay_seconds) == false) {
         snake->window.is_running = false;
         return;
     }
@@ -354,7 +358,7 @@ void snake_update_fixed(snake_t* snake) {
         const Uint64 now_ms = SDL_GetTicks();
         const int seconds = get_resume_seconds_remaining(now_ms, snake->resume_countdown_end_ms);
         if (seconds != snake->resume_countdown_value) {
-            if (snake_text_update_resume_countdown(snake, seconds) == false) {
+            if (snake_hud_update_resume_countdown(&snake->hud, &snake->window, seconds) == false) {
                 snake->window.is_running = false;
                 return;
             }
@@ -381,12 +385,12 @@ void snake_update_fixed(snake_t* snake) {
             if (snake_save_config(snake) == false) {
                 SDL_Log("Failed to save config after new high score");
             }
-            if (snake_text_update_start_high_score(snake) == false) {
+            if (snake_hud_update_start_high_score(&snake->hud, &snake->window, snake->config.high_score) == false) {
                 snake->window.is_running = false;
                 return;
             }
         }
-        if (snake_text_update_game_over(snake) == false) {
+        if (snake_hud_update_game_over(&snake->hud, snake->array_body.size, snake->config.high_score) == false) {
             snake->window.is_running = false;
         }
         return;
@@ -405,7 +409,7 @@ void snake_update_fixed(snake_t* snake) {
 
         dynamic_array_append(&snake->array_body, &new_segment_position);
 
-        if (snake_text_update_score(snake) == false) {
+        if (snake_hud_update_score(&snake->hud, snake->array_body.size) == false) {
             snake->window.is_running = false;
         }
     }

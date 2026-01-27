@@ -4,7 +4,7 @@
 
 #include "snake_menu.h"
 #include "snake_state.h"
-#include "snake_text.h"
+#include "snake_hud.h"
 #include "../modules/ui.h"
 
 static void snake_options_set_volume(snake_t* snake, float volume) {
@@ -20,7 +20,7 @@ static void snake_options_set_volume(snake_t* snake, float volume) {
     if (snake_apply_audio_settings(snake) == false) {
         SDL_Log("Failed to apply audio volume settings");
     }
-    if (snake_text_update_options_volume(snake) == false) {
+    if (snake_hud_update_options_volume(&snake->hud, &snake->window, snake->config.volume) == false) {
         snake->window.is_running = false;
         return;
     }
@@ -57,7 +57,7 @@ static void snake_options_set_resume_delay(snake_t* snake, int seconds) {
     }
 
     snake->config.resume_delay_seconds = seconds;
-    if (snake_text_update_options_resume_delay(snake) == false) {
+    if (snake_hud_update_options_resume_delay(&snake->hud, &snake->window, snake->config.resume_delay_seconds) == false) {
         snake->window.is_running = false;
         return;
     }
@@ -77,49 +77,49 @@ static bool snake_options_handle_mouse(snake_t* snake, float mouse_x, float mous
     }
 
     vector2i_t title_size;
-    if (TTF_GetTextSize(snake->text_options_title, &title_size.x, &title_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_title, &title_size.x, &title_size.y) == false) {
         SDL_Log("Failed to measure options title text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t volume_label_size;
-    if (TTF_GetTextSize(snake->text_options_volume_label, &volume_label_size.x, &volume_label_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_volume_label, &volume_label_size.x, &volume_label_size.y) == false) {
         SDL_Log("Failed to measure volume label text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t volume_value_size;
-    if (TTF_GetTextSize(snake->text_options_volume_value, &volume_value_size.x, &volume_value_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_volume_value, &volume_value_size.x, &volume_value_size.y) == false) {
         SDL_Log("Failed to measure volume value text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t mute_label_size;
-    if (TTF_GetTextSize(snake->text_options_mute_label, &mute_label_size.x, &mute_label_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_mute_label, &mute_label_size.x, &mute_label_size.y) == false) {
         SDL_Log("Failed to measure mute label text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t resume_label_size;
-    if (TTF_GetTextSize(snake->text_options_resume_label, &resume_label_size.x, &resume_label_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_resume_label, &resume_label_size.x, &resume_label_size.y) == false) {
         SDL_Log("Failed to measure resume delay label text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t resume_value_size;
-    if (TTF_GetTextSize(snake->text_options_resume_value, &resume_value_size.x, &resume_value_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_resume_value, &resume_value_size.x, &resume_value_size.y) == false) {
         SDL_Log("Failed to measure resume delay value text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
     }
 
     vector2i_t back_label_size;
-    if (TTF_GetTextSize(snake->text_options_back_button, &back_label_size.x, &back_label_size.y) == false) {
+    if (TTF_GetTextSize(snake->hud.text_options_back_button, &back_label_size.x, &back_label_size.y) == false) {
         SDL_Log("Failed to measure back button text: %s", SDL_GetError());
         snake->window.is_running = false;
         return false;
@@ -209,7 +209,7 @@ static bool snake_options_handle_mouse(snake_t* snake, float mouse_x, float mous
         if (ui_button_contains(&back_button, mouse_x, mouse_y) == true) {
             snake->state = snake->options_return_state;
             if (snake->state == SNAKE_STATE_PAUSED) {
-                if (snake_text_update_pause(snake) == false) {
+                if (snake_hud_update_pause(&snake->hud, snake->array_body.size) == false) {
                     snake->window.is_running = false;
                 }
             }
@@ -243,7 +243,7 @@ void snake_handle_events(snake_t* snake) {
             if (event.key.scancode == SDL_SCANCODE_ESCAPE && event.key.repeat == 0) {
                 if (snake->state == SNAKE_STATE_PLAYING) {
                     snake->state = SNAKE_STATE_PAUSED;
-                    if (snake_text_update_pause(snake) == false) {
+                    if (snake_hud_update_pause(&snake->hud, snake->array_body.size) == false) {
                         snake->window.is_running = false;
                     }
                 } else if (snake->state == SNAKE_STATE_PAUSED) {
@@ -262,8 +262,8 @@ void snake_handle_events(snake_t* snake) {
             event.button.down == true) {
             if (snake->state == SNAKE_STATE_PAUSED) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout_with_secondary_button(snake, snake->text_pause, NULL, false,
-                                                                snake->text_resume, true, snake->text_options_button,
+                if (snake_menu_get_layout_with_secondary_button(snake, snake->hud.text_pause, NULL, false,
+                                                                snake->hud.text_resume, true, snake->hud.text_options_button,
                                                                 true, &layout) == false) {
                     return;
                 }
@@ -281,9 +281,9 @@ void snake_handle_events(snake_t* snake) {
                 }
             } else if (snake->state == SNAKE_STATE_START) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout_with_secondary_button(snake, snake->text_start_title,
-                                                                snake->text_start_high_score, true,
-                                                                snake->text_start_button, true, snake->text_options_button,
+                if (snake_menu_get_layout_with_secondary_button(snake, snake->hud.text_start_title,
+                                                                snake->hud.text_start_high_score, true,
+                                                                snake->hud.text_start_button, true, snake->hud.text_options_button,
                                                                 true, &layout) == false) {
                     return;
                 }
@@ -305,8 +305,8 @@ void snake_handle_events(snake_t* snake) {
                 }
             } else if (snake->state == SNAKE_STATE_GAME_OVER) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout(snake, snake->text_game_over_title, snake->text_game_over_score, true,
-                                          snake->text_restart_button, true, &layout) == false) {
+                if (snake_menu_get_layout(snake, snake->hud.text_game_over_title, snake->hud.text_game_over_score, true,
+                                          snake->hud.text_restart_button, true, &layout) == false) {
                     return;
                 }
 
