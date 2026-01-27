@@ -113,7 +113,13 @@ void snake_render_frame(snake_t* snake) {
         }
 
         snake_menu_layout_t layout;
-        if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START) {
+        if (snake->state == SNAKE_STATE_PAUSED) {
+            if (snake_menu_get_layout_with_three_buttons(snake, title_text, subtitle_text, has_subtitle, button_text,
+                                                         has_button, snake->hud.text_options_button, true,
+                                                         snake->hud.text_exit_button, true, &layout) == false) {
+                return;
+            }
+        } else if (snake->state == SNAKE_STATE_START) {
             if (snake_menu_get_layout_with_secondary_button(snake, title_text, subtitle_text, has_subtitle, button_text,
                                                             has_button, snake->hud.text_options_button, true, &layout) ==
                 false) {
@@ -226,6 +232,31 @@ void snake_render_frame(snake_t* snake) {
             ui_button_get_label_position(&options_button, &options_text_size, &options_text_x, &options_text_y);
             if (TTF_DrawRendererText(snake->hud.text_options_button, options_text_x, options_text_y) == false) {
                 SDL_Log("Failed to render options button text: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+        }
+
+        if (snake->state == SNAKE_STATE_PAUSED) {
+            vector2i_t exit_text_size;
+            if (get_text_size(snake, snake->hud.text_exit_button, &exit_text_size, "exit button") == false) {
+                return;
+            }
+
+            ui_button_t exit_button;
+            ui_button_init(&exit_button, k_color_menu_button, k_color_menu_button_border);
+            exit_button.rect = layout.tertiary_button_rect;
+            if (ui_button_render(snake->window.sdl_renderer, &exit_button) == false) {
+                SDL_Log("Failed to render exit button: %s", SDL_GetError());
+                snake->window.is_running = false;
+                return;
+            }
+
+            float exit_text_x = 0.f;
+            float exit_text_y = 0.f;
+            ui_button_get_label_position(&exit_button, &exit_text_size, &exit_text_x, &exit_text_y);
+            if (TTF_DrawRendererText(snake->hud.text_exit_button, exit_text_x, exit_text_y) == false) {
+                SDL_Log("Failed to render exit button text: %s", SDL_GetError());
                 snake->window.is_running = false;
                 return;
             }

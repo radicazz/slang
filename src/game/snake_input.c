@@ -262,9 +262,9 @@ void snake_handle_events(snake_t* snake) {
             event.button.down == true) {
             if (snake->state == SNAKE_STATE_PAUSED) {
                 snake_menu_layout_t layout;
-                if (snake_menu_get_layout_with_secondary_button(snake, snake->hud.text_pause, NULL, false,
-                                                                snake->hud.text_resume, true, snake->hud.text_options_button,
-                                                                true, &layout) == false) {
+                if (snake_menu_get_layout_with_three_buttons(snake, snake->hud.text_pause, NULL, false,
+                                                             snake->hud.text_resume, true, snake->hud.text_options_button,
+                                                             true, snake->hud.text_exit_button, true, &layout) == false) {
                     return;
                 }
 
@@ -278,6 +278,12 @@ void snake_handle_events(snake_t* snake) {
                 options_button.rect = layout.secondary_button_rect;
                 if (ui_button_contains(&options_button, event.button.x, event.button.y) == true) {
                     snake_state_begin_options(snake, SNAKE_STATE_PAUSED);
+                }
+
+                ui_button_t exit_button = {0};
+                exit_button.rect = layout.tertiary_button_rect;
+                if (ui_button_contains(&exit_button, event.button.x, event.button.y) == true) {
+                    snake->window.is_running = false;
                 }
             } else if (snake->state == SNAKE_STATE_START) {
                 snake_menu_layout_t layout;

@@ -107,6 +107,19 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
         return false;
     }
 
+    const char* exit_label = "Exit";
+    hud->text_exit_button = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, exit_label,
+                                           SDL_strlen(exit_label));
+    if (hud->text_exit_button == NULL) {
+        SDL_Log("Failed to create exit button text object: %s", SDL_GetError());
+        return false;
+    }
+
+    if (TTF_SetTextColor(hud->text_exit_button, 20, 20, 20, 255) == false) {
+        SDL_Log("Failed to set exit button text color: %s", SDL_GetError());
+        return false;
+    }
+
     const char* start_title = "Start Game";
     hud->text_start_title = TTF_CreateText(window->ttf_text_engine, window->ttf_font_default, start_title,
                                            SDL_strlen(start_title));
@@ -316,6 +329,11 @@ void snake_hud_destroy(snake_hud_t* hud) {
     if (hud->text_resume != NULL) {
         TTF_DestroyText(hud->text_resume);
         hud->text_resume = NULL;
+    }
+
+    if (hud->text_exit_button != NULL) {
+        TTF_DestroyText(hud->text_exit_button);
+        hud->text_exit_button = NULL;
     }
 
     if (hud->text_start_title != NULL) {

@@ -15,6 +15,7 @@ typedef struct {
     char text_pause_buffer[32];
 
     TTF_Text* text_resume;
+    TTF_Text* text_exit_button;
 
     TTF_Text* text_start_title;
     TTF_Text* text_start_button;
