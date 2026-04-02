@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "utils/dynamic_array.h"
 
@@ -26,7 +27,7 @@ static const char* g_current_test = NULL;
 
 static void dynamic_array_test_setup(dynamic_array_t* array) {
     dynamic_array_init(array);
-    dynamic_array_create(array, sizeof(int), 4);
+    TEST_ASSERT(dynamic_array_create(array, sizeof(int), 4));
 }
 
 static void dynamic_array_test_teardown(dynamic_array_t* array) {
@@ -41,7 +42,7 @@ static void test_create_and_destroy(void) {
     TEST_ASSERT_EQUAL_SIZE_T(0, array.size);
     TEST_ASSERT_EQUAL_SIZE_T(0, array.capacity);
 
-    dynamic_array_create(&array, sizeof(int), 4);
+    TEST_ASSERT(dynamic_array_create(&array, sizeof(int), 4));
 
     TEST_ASSERT_NOT_NULL(array.data);
     TEST_ASSERT_EQUAL_SIZE_T(0, array.size);
@@ -59,7 +60,7 @@ static void test_append_and_get(void) {
     dynamic_array_test_setup(&array);
 
     for (int i = 0; i < 6; ++i) {
-        dynamic_array_append(&array, &i);
+        TEST_ASSERT(dynamic_array_append(&array, &i));
         TEST_ASSERT_EQUAL_SIZE_T((size_t)(i + 1), array.size);
     }
 
@@ -78,7 +79,7 @@ static void test_set_and_get(void) {
 
     for (int i = 0; i < 4; ++i) {
         int value = 0;
-        dynamic_array_append(&array, &value);
+        TEST_ASSERT(dynamic_array_append(&array, &value));
     }
 
     for (int i = 0; i < 4; ++i) {
@@ -95,7 +96,7 @@ static void test_remove_compacts_array(void) {
     dynamic_array_test_setup(&array);
 
     for (int i = 0; i < 5; ++i) {
-        dynamic_array_append(&array, &i);
+        TEST_ASSERT(dynamic_array_append(&array, &i));
     }
 
     dynamic_array_remove(&array, 2);
@@ -113,10 +114,10 @@ static void test_remove_compacts_array(void) {
 static void test_resize_growth_and_shrink(void) {
     dynamic_array_t array;
     dynamic_array_init(&array);
-    dynamic_array_create(&array, sizeof(int), 2);
+    TEST_ASSERT(dynamic_array_create(&array, sizeof(int), 2));
 
     for (int i = 0; i < 5; ++i) {
-        dynamic_array_append(&array, &i);
+        TEST_ASSERT(dynamic_array_append(&array, &i));
     }
 
     TEST_ASSERT_EQUAL_SIZE_T(5, array.size);
@@ -138,17 +139,26 @@ static void test_is_empty(void) {
     dynamic_array_init(&array);
     TEST_ASSERT(dynamic_array_is_empty(&array));
 
-    dynamic_array_create(&array, sizeof(int), 2);
+    TEST_ASSERT(dynamic_array_create(&array, sizeof(int), 2));
     TEST_ASSERT(dynamic_array_is_empty(&array));
 
     int value = 42;
-    dynamic_array_append(&array, &value);
+    TEST_ASSERT(dynamic_array_append(&array, &value));
     TEST_ASSERT(!dynamic_array_is_empty(&array));
 
     dynamic_array_remove(&array, 0);
     TEST_ASSERT(dynamic_array_is_empty(&array));
 
     dynamic_array_destroy(&array);
+}
+
+static void test_create_rejects_overflow(void) {
+    dynamic_array_t array;
+    dynamic_array_init(&array);
+
+    TEST_ASSERT(dynamic_array_create(&array, sizeof(int), SIZE_MAX) == false);
+    TEST_ASSERT_NULL(array.data);
+    TEST_ASSERT_EQUAL_SIZE_T(0, array.capacity);
 }
 
 static void run_test(const char* name, test_fn_t fn) {
@@ -170,6 +180,7 @@ int main(void) {
     run_test("test_remove_compacts_array", test_remove_compacts_array);
     run_test("test_resize_growth_and_shrink", test_resize_growth_and_shrink);
     run_test("test_is_empty", test_is_empty);
+    run_test("test_create_rejects_overflow", test_create_rejects_overflow);
 
     if (g_failures > 0) {
         printf("%d/%d test(s) failed.\n", g_failures, g_tests_run);

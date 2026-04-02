@@ -1,8 +1,11 @@
 #include "dynamic_array.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <SDL3/SDL_log.h>
 
 void dynamic_array_init(dynamic_array_t* array) {
     assert(array != NULL);
@@ -13,10 +16,20 @@ void dynamic_array_init(dynamic_array_t* array) {
     array->capacity = 0;
 }
 
-void dynamic_array_create(dynamic_array_t* array, size_t data_size, size_t initial_capacity) {
+static bool dynamic_array_can_allocate(size_t data_size, size_t capacity) {
+    return data_size <= (SIZE_MAX / capacity);
+}
+
+bool dynamic_array_create(dynamic_array_t* array, size_t data_size, size_t initial_capacity) {
     assert(array != NULL);
     assert(data_size > 0);
     assert(initial_capacity > 0);
+
+    if (dynamic_array_can_allocate(data_size, initial_capacity) == false) {
+        SDL_Log("Dynamic array allocation would overflow (element_size=%zu, capacity=%zu)", data_size,
+                initial_capacity);
+        return false;
+    }
 
     // Initialize the dynamic array based on initial capacity and data size.
     array->data_size = data_size;
@@ -24,7 +37,14 @@ void dynamic_array_create(dynamic_array_t* array, size_t data_size, size_t initi
     array->capacity = initial_capacity;
     array->data = malloc(data_size * initial_capacity);
 
-    assert(array->data != NULL);
+    if (array->data == NULL) {
+        SDL_Log("Failed to allocate dynamic array (element_size=%zu, capacity=%zu)", data_size, initial_capacity);
+        array->data_size = 0;
+        array->capacity = 0;
+        return false;
+    }
+
+    return true;
 }
 
 void dynamic_array_destroy(dynamic_array_t* array) {
@@ -49,30 +69,44 @@ void dynamic_array_destroy(dynamic_array_t* array) {
  * @param array The dynamic array to resize.
  * @param new_capacity The new capacity for the dynamic array.
  */
-static void dynamic_array_resize(dynamic_array_t* array, size_t new_capacity) {
+static bool dynamic_array_resize(dynamic_array_t* array, size_t new_capacity) {
     assert(array != NULL);
     assert(new_capacity > 0);
     assert(new_capacity >= array->size);
 
+    if (dynamic_array_can_allocate(array->data_size, new_capacity) == false) {
+        SDL_Log("Dynamic array resize would overflow (element_size=%zu, capacity=%zu)", array->data_size, new_capacity);
+        return false;
+    }
+
     void* new_data = realloc(array->data, array->data_size * new_capacity);
-    assert(new_data != NULL);
+    if (new_data == NULL) {
+        SDL_Log("Failed to resize dynamic array to capacity %zu", new_capacity);
+        return false;
+    }
 
     array->data = new_data;
     array->capacity = new_capacity;
+    return true;
 }
 
-void dynamic_array_append(dynamic_array_t* array, const void* data) {
+bool dynamic_array_append(dynamic_array_t* array, const void* data) {
     assert(array != NULL);
     assert(data != NULL);
 
     // Resize the array if necessary.
     if (array->size >= array->capacity) {
-        dynamic_array_resize(array, array->capacity * 2);
+        const size_t new_capacity = array->capacity > (SIZE_MAX / 2) ? SIZE_MAX : array->capacity * 2;
+        if (new_capacity <= array->capacity || dynamic_array_resize(array, new_capacity) == false) {
+            SDL_Log("Failed to grow dynamic array from capacity %zu", array->capacity);
+            return false;
+        }
     }
 
     memcpy((char*)array->data + (array->size * array->data_size), data, array->data_size);
 
     array->size++;
+    return true;
 }
 
 void dynamic_array_remove(dynamic_array_t* array, size_t index) {
@@ -87,7 +121,10 @@ void dynamic_array_remove(dynamic_array_t* array, size_t index) {
     array->size--;
 
     if (array->size > 0 && array->size < array->capacity / 4) {
-        dynamic_array_resize(array, array->capacity / 2);
+        const size_t new_capacity = array->capacity / 2;
+        if (new_capacity >= array->size) {
+            (void)dynamic_array_resize(array, new_capacity);
+        }
     }
 }
 

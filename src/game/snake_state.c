@@ -198,7 +198,11 @@ static bool test_food_collision(snake_t* snake) {
 
             vector2i_t new_food_position;
             if (get_random_empty_position(snake, &new_food_position) == true) {
-                dynamic_array_append(&snake->array_food, &new_food_position);
+                if (dynamic_array_append(&snake->array_food, &new_food_position) == false) {
+                    SDL_Log("Failed to append replacement food item");
+                    snake->window.is_running = false;
+                    return false;
+                }
                 cell_set_state_and_color(snake, &new_food_position, SNAKE_CELL_FOOD, &k_color_food);
             }
 
@@ -249,19 +253,31 @@ bool snake_state_reset(snake_t* snake) {
     snake->previous_position_tail = snake->position_head;
     snake->current_direction = SNAKE_DIRECTION_UP;
 
-    dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8);
-    for (int i = 0; i < snake->array_food.capacity; ++i) {
+    if (dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8) == false) {
+        SDL_Log("Failed to allocate food array");
+        return false;
+    }
+
+    for (size_t i = 0; i < snake->array_food.capacity; ++i) {
         vector2i_t food_position;
         if (get_random_empty_position(snake, &food_position) == false) {
-            SDL_Log("Warning: Could only spawn %d food items", i);
+            SDL_Log("Warning: Could only spawn %zu food items", i);
             break;
         }
 
-        dynamic_array_append(&snake->array_food, &food_position);
+        if (dynamic_array_append(&snake->array_food, &food_position) == false) {
+            SDL_Log("Failed to append food item");
+            dynamic_array_destroy(&snake->array_food);
+            return false;
+        }
         cell_set_state_and_color(snake, &food_position, SNAKE_CELL_FOOD, &k_color_food);
     }
 
-    dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8);
+    if (dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8) == false) {
+        SDL_Log("Failed to allocate body array");
+        dynamic_array_destroy(&snake->array_food);
+        return false;
+    }
 
     if (snake_hud_update_score(&snake->hud, snake->array_body.size) == false) {
         dynamic_array_destroy(&snake->array_food);
@@ -410,7 +426,11 @@ void snake_update_fixed(snake_t* snake) {
             new_segment_position = snake->previous_position_tail;
         }
 
-        dynamic_array_append(&snake->array_body, &new_segment_position);
+        if (dynamic_array_append(&snake->array_body, &new_segment_position) == false) {
+            SDL_Log("Failed to grow snake body");
+            snake->window.is_running = false;
+            return;
+        }
 
         if (snake_hud_update_score(&snake->hud, snake->array_body.size) == false) {
             snake->window.is_running = false;
