@@ -2,10 +2,10 @@
 
 #include <SDL3/SDL_log.h>
 
+#include "snake_options_layout.h"
 #include "snake_menu.h"
-#include "snake_state.h"
 #include "snake_hud.h"
-#include "../modules/ui.h"
+#include "snake_state.h"
 
 static void snake_options_set_volume(snake_t* snake, float volume) {
     SDL_assert(snake != NULL);
@@ -70,144 +70,33 @@ static void snake_options_set_resume_delay(snake_t* snake, int seconds) {
 static bool snake_options_handle_mouse(snake_t* snake, float mouse_x, float mouse_y, bool pressed) {
     SDL_assert(snake != NULL);
 
-    vector2i_t screen_size;
-    if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
-        SDL_Log("Failed to query render output size: %s", SDL_GetError());
-        snake->window.is_running = false;
+    snake_options_layout_t layout;
+    if (snake_options_layout_get(snake, &layout) == false) {
         return false;
     }
-
-    vector2i_t title_size;
-    if (TTF_GetTextSize(snake->hud.text_options_title, &title_size.x, &title_size.y) == false) {
-        SDL_Log("Failed to measure options title text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t volume_label_size;
-    if (TTF_GetTextSize(snake->hud.text_options_volume_label, &volume_label_size.x, &volume_label_size.y) == false) {
-        SDL_Log("Failed to measure volume label text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t volume_value_size;
-    if (TTF_GetTextSize(snake->hud.text_options_volume_value, &volume_value_size.x, &volume_value_size.y) == false) {
-        SDL_Log("Failed to measure volume value text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t mute_label_size;
-    if (TTF_GetTextSize(snake->hud.text_options_mute_label, &mute_label_size.x, &mute_label_size.y) == false) {
-        SDL_Log("Failed to measure mute label text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t resume_label_size;
-    if (TTF_GetTextSize(snake->hud.text_options_resume_label, &resume_label_size.x, &resume_label_size.y) == false) {
-        SDL_Log("Failed to measure resume delay label text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t resume_value_size;
-    if (TTF_GetTextSize(snake->hud.text_options_resume_value, &resume_value_size.x, &resume_value_size.y) == false) {
-        SDL_Log("Failed to measure resume delay value text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    vector2i_t back_label_size;
-    if (TTF_GetTextSize(snake->hud.text_options_back_button, &back_label_size.x, &back_label_size.y) == false) {
-        SDL_Log("Failed to measure back button text: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    const float slider_width = 220.f;
-    const float slider_height = 10.f;
-    const float knob_width = 14.f;
-    const float checkbox_size = 20.f;
-    const float content_gap = 16.f;
-    const float row_gap = 14.f;
-    const float row_height = SDL_max(slider_height + 8.f, checkbox_size);
-
-    const float volume_row_width =
-        (float)volume_label_size.x + content_gap + slider_width + content_gap + (float)volume_value_size.x;
-    const float mute_row_width = (float)mute_label_size.x + content_gap + checkbox_size;
-    const float resume_row_width =
-        (float)resume_label_size.x + content_gap + slider_width + content_gap + (float)resume_value_size.x;
-    const float back_button_width = (float)back_label_size.x + 56.f;
-
-    float content_width = SDL_max((float)title_size.x, volume_row_width);
-    content_width = SDL_max(content_width, mute_row_width);
-    content_width = SDL_max(content_width, resume_row_width);
-    content_width = SDL_max(content_width, back_button_width);
-
-    const float content_height = (float)title_size.y + row_gap + row_height + row_gap + row_height + row_gap +
-                                 row_height + row_gap + (float)back_label_size.y + 24.f;
-
-    ui_panel_t panel;
-    ui_panel_init(&panel, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0});
-    vector2i_t content_size = {(int)(content_width + 0.5f), (int)(content_height + 0.5f)};
-    ui_panel_layout_from_content(&panel, &screen_size, &content_size, 20.f, 20.f);
-
-    const float row_left = panel.rect.x + 20.f;
-    const float center_x = panel.rect.x + panel.rect.w * 0.5f;
-    float cursor_y = panel.rect.y + 20.f + (float)title_size.y + row_gap;
-    const float row_center_y = cursor_y + row_height * 0.5f;
-    float cursor_x = row_left + (float)volume_label_size.x + content_gap;
-
-    ui_slider_t slider;
-    ui_slider_init(&slider, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0},
-                   (SDL_Color){0, 0, 0, 0});
-    ui_slider_layout(&slider, cursor_x + slider_width * 0.5f, row_center_y, slider_width, slider_height, knob_width);
-
-    ui_checkbox_t checkbox;
-    ui_checkbox_init(&checkbox, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0});
-    cursor_y += row_height + row_gap;
-    const float mute_row_center_y = cursor_y + row_height * 0.5f;
-    cursor_x = row_left + (float)mute_label_size.x + content_gap + checkbox_size * 0.5f;
-    ui_checkbox_layout(&checkbox, cursor_x, mute_row_center_y, checkbox_size);
-
-    ui_slider_int_t resume_slider;
-    ui_slider_int_init(&resume_slider, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0},
-                       (SDL_Color){0, 0, 0, 0}, CONFIG_RESUME_DELAY_MIN, CONFIG_RESUME_DELAY_MAX);
-    cursor_y += row_height + row_gap;
-    const float resume_row_center_y = cursor_y + row_height * 0.5f;
-    cursor_x = row_left + (float)resume_label_size.x + content_gap;
-    ui_slider_int_layout(&resume_slider, cursor_x + slider_width * 0.5f, resume_row_center_y, slider_width,
-                         slider_height, knob_width);
-
-    ui_button_t back_button;
-    ui_button_init(&back_button, (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0});
-    cursor_y += row_height + row_gap;
-    ui_button_layout_from_label(&back_button, &back_label_size, center_x, cursor_y + back_label_size.y * 0.5f, 28.f,
-                                12.f);
 
     if (pressed == true) {
-        if (ui_slider_contains(&slider, mouse_x, mouse_y) == true) {
+        if (ui_slider_contains(&layout.volume_slider, mouse_x, mouse_y) == true) {
             snake->options_dragging_volume = true;
             snake->options_dragging_resume = false;
-            snake_options_set_volume(snake, ui_slider_get_value(&slider, mouse_x));
+            snake_options_set_volume(snake, ui_slider_get_value(&layout.volume_slider, mouse_x));
             return true;
         }
 
-        if (ui_checkbox_contains(&checkbox, mouse_x, mouse_y) == true) {
+        if (ui_checkbox_contains(&layout.mute_checkbox, mouse_x, mouse_y) == true) {
             snake_options_toggle_mute(snake);
             return true;
         }
 
-        if (ui_slider_int_contains(&resume_slider, mouse_x, mouse_y) == true) {
+        if (ui_slider_int_contains(&layout.resume_slider, mouse_x, mouse_y) == true) {
             snake->options_dragging_resume = true;
             snake->options_dragging_volume = false;
-            snake_options_set_resume_delay(snake, snake_options_get_resume_delay_from_mouse(&resume_slider, mouse_x));
+            snake_options_set_resume_delay(snake,
+                                           snake_options_get_resume_delay_from_mouse(&layout.resume_slider, mouse_x));
             return true;
         }
 
-        if (ui_button_contains(&back_button, mouse_x, mouse_y) == true) {
+        if (ui_button_contains(&layout.back_button, mouse_x, mouse_y) == true) {
             snake->state = snake->options_return_state;
             if (snake->state == SNAKE_STATE_PAUSED) {
                 if (snake_hud_update_pause(&snake->hud, snake->array_body.size) == false) {
@@ -221,11 +110,12 @@ static bool snake_options_handle_mouse(snake_t* snake, float mouse_x, float mous
     }
 
     if (snake->options_dragging_volume == true && pressed == true) {
-        snake_options_set_volume(snake, ui_slider_get_value(&slider, mouse_x));
+        snake_options_set_volume(snake, ui_slider_get_value(&layout.volume_slider, mouse_x));
     }
 
     if (snake->options_dragging_resume == true && pressed == true) {
-        snake_options_set_resume_delay(snake, snake_options_get_resume_delay_from_mouse(&resume_slider, mouse_x));
+        snake_options_set_resume_delay(snake,
+                                       snake_options_get_resume_delay_from_mouse(&layout.resume_slider, mouse_x));
     }
 
     return true;

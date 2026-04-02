@@ -3,6 +3,7 @@
 #include <SDL3/SDL_log.h>
 
 #include "snake_menu.h"
+#include "snake_options_layout.h"
 #include "../modules/ui.h"
 
 static const SDL_Color k_color_menu_overlay = {0, 0, 0, 160};
@@ -326,203 +327,126 @@ void snake_render_frame(snake_t* snake) {
         SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size_options.x, (float)screen_size_options.y};
         SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
 
-        vector2i_t title_size;
-        if (get_text_size(snake, snake->hud.text_options_title, &title_size, "options title") == false) {
+        snake_options_layout_t options_layout;
+        if (snake_options_layout_get(snake, &options_layout) == false) {
             return;
         }
 
-        vector2i_t volume_label_size;
-        if (get_text_size(snake, snake->hud.text_options_volume_label, &volume_label_size, "volume label") == false) {
-            return;
-        }
+        options_layout.panel.fill_color = k_color_menu_panel;
+        options_layout.panel.border_color = k_color_menu_panel_border;
+        options_layout.panel.fill_color.a = (Uint8)(k_color_menu_panel.a * snake->hud.menu_fade_alpha);
+        options_layout.panel.border_color.a = (Uint8)(k_color_menu_panel_border.a * snake->hud.menu_fade_alpha);
 
-        vector2i_t volume_value_size;
-        if (get_text_size(snake, snake->hud.text_options_volume_value, &volume_value_size, "volume value") == false) {
-            return;
-        }
-
-        vector2i_t mute_label_size;
-        if (get_text_size(snake, snake->hud.text_options_mute_label, &mute_label_size, "mute label") == false) {
-            return;
-        }
-
-        vector2i_t resume_label_size;
-        if (get_text_size(snake, snake->hud.text_options_resume_label, &resume_label_size, "resume label") == false) {
-            return;
-        }
-
-        vector2i_t resume_value_size;
-        if (get_text_size(snake, snake->hud.text_options_resume_value, &resume_value_size, "resume value") == false) {
-            return;
-        }
-
-        vector2i_t back_label_size;
-        if (get_text_size(snake, snake->hud.text_options_back_button, &back_label_size, "back button") == false) {
-            return;
-        }
-
-        const float slider_width = 220.f;
-        const float slider_height = 10.f;
-        const float knob_width = 14.f;
-        const float checkbox_size = 20.f;
-        const float content_gap = 16.f;
-        const float row_gap = 14.f;
-        const float row_height = SDL_max(slider_height + 8.f, checkbox_size);
-
-        const float volume_row_width =
-            (float)volume_label_size.x + content_gap + slider_width + content_gap + (float)volume_value_size.x;
-        const float mute_row_width = (float)mute_label_size.x + content_gap + checkbox_size;
-        const float resume_row_width =
-            (float)resume_label_size.x + content_gap + slider_width + content_gap + (float)resume_value_size.x;
-        const float back_button_width = (float)back_label_size.x + 56.f;
-
-        float content_width = SDL_max((float)title_size.x, volume_row_width);
-        content_width = SDL_max(content_width, mute_row_width);
-        content_width = SDL_max(content_width, resume_row_width);
-        content_width = SDL_max(content_width, back_button_width);
-
-        const float content_height = (float)title_size.y + row_gap + row_height + row_gap + row_height + row_gap +
-                                     row_height + row_gap + (float)back_label_size.y + 24.f;
-
-        ui_panel_t panel;
-        ui_panel_init(&panel, k_color_menu_panel, k_color_menu_panel_border);
-        vector2i_t content_size = {(int)(content_width + 0.5f), (int)(content_height + 0.5f)};
-        ui_panel_layout_from_content(&panel, &screen_size_options, &content_size, 20.f, 20.f);
-        panel.fill_color.a = (Uint8)(k_color_menu_panel.a * snake->hud.menu_fade_alpha);
-        panel.border_color.a = (Uint8)(k_color_menu_panel_border.a * snake->hud.menu_fade_alpha);
-
-        if (ui_panel_render(snake->window.sdl_renderer, &panel) == false) {
+        if (ui_panel_render(snake->window.sdl_renderer, &options_layout.panel) == false) {
             SDL_Log("Failed to render options panel: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        float cursor_y = panel.rect.y + 20.f;
-        const float center_x = panel.rect.x + panel.rect.w * 0.5f;
-
-        if (TTF_DrawRendererText(snake->hud.text_options_title, center_x - (float)title_size.x * 0.5f, cursor_y) ==
-            false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_title, options_layout.title_pos.x,
+                                 options_layout.title_pos.y) == false) {
             SDL_Log("Failed to render options title text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_y += (float)title_size.y + row_gap;
-
-        const float row_left = center_x - content_width * 0.5f;
-        const float row_center_y = cursor_y + row_height * 0.5f;
-        float cursor_x = row_left;
-
-        if (TTF_DrawRendererText(snake->hud.text_options_volume_label, cursor_x,
-                                 row_center_y - volume_label_size.y * 0.5f) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_volume_label, options_layout.volume_label_pos.x,
+                                 options_layout.volume_label_pos.y) == false) {
             SDL_Log("Failed to render volume label text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_x += (float)volume_label_size.x + content_gap;
-
-        ui_slider_t slider;
-        ui_slider_init(&slider, k_color_menu_slider_track, k_color_menu_slider_fill, k_color_menu_slider_knob,
-                       k_color_menu_button_border);
-        ui_slider_layout(&slider, cursor_x + slider_width * 0.5f, row_center_y, slider_width, slider_height,
-                         knob_width);
-        slider.track_color.a = (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
-        slider.fill_color.a = (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
-        slider.knob_color.a = (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
-        slider.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
-        if (ui_slider_render(snake->window.sdl_renderer, &slider, snake->config.volume) == false) {
+        options_layout.volume_slider.track_color = k_color_menu_slider_track;
+        options_layout.volume_slider.fill_color = k_color_menu_slider_fill;
+        options_layout.volume_slider.knob_color = k_color_menu_slider_knob;
+        options_layout.volume_slider.border_color = k_color_menu_button_border;
+        options_layout.volume_slider.track_color.a = (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
+        options_layout.volume_slider.fill_color.a = (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
+        options_layout.volume_slider.knob_color.a = (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
+        options_layout.volume_slider.border_color.a =
+            (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
+        if (ui_slider_render(snake->window.sdl_renderer, &options_layout.volume_slider, snake->config.volume) ==
+            false) {
             SDL_Log("Failed to render volume slider: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_x += slider_width + content_gap;
-        if (TTF_DrawRendererText(snake->hud.text_options_volume_value, cursor_x,
-                                 row_center_y - volume_value_size.y * 0.5f) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_volume_value, options_layout.volume_value_pos.x,
+                                 options_layout.volume_value_pos.y) == false) {
             SDL_Log("Failed to render volume value text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_y += row_height + row_gap;
-        const float mute_row_center_y = cursor_y + row_height * 0.5f;
-        cursor_x = row_left;
-
-        if (TTF_DrawRendererText(snake->hud.text_options_mute_label, cursor_x,
-                                 mute_row_center_y - mute_label_size.y * 0.5f) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_mute_label, options_layout.mute_label_pos.x,
+                                 options_layout.mute_label_pos.y) == false) {
             SDL_Log("Failed to render mute label text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_x += (float)mute_label_size.x + content_gap + checkbox_size * 0.5f;
-        ui_checkbox_t checkbox;
-        ui_checkbox_init(&checkbox, k_color_menu_checkbox, k_color_menu_checkbox_border, k_color_menu_checkbox_check);
-        ui_checkbox_layout(&checkbox, cursor_x, mute_row_center_y, checkbox_size);
-        checkbox.fill_color.a = (Uint8)(k_color_menu_checkbox.a * snake->hud.menu_fade_alpha);
-        checkbox.border_color.a = (Uint8)(k_color_menu_checkbox_border.a * snake->hud.menu_fade_alpha);
-        checkbox.check_color.a = (Uint8)(k_color_menu_checkbox_check.a * snake->hud.menu_fade_alpha);
-        if (ui_checkbox_render(snake->window.sdl_renderer, &checkbox, snake->config.mute) == false) {
+        options_layout.mute_checkbox.fill_color = k_color_menu_checkbox;
+        options_layout.mute_checkbox.border_color = k_color_menu_checkbox_border;
+        options_layout.mute_checkbox.check_color = k_color_menu_checkbox_check;
+        options_layout.mute_checkbox.fill_color.a = (Uint8)(k_color_menu_checkbox.a * snake->hud.menu_fade_alpha);
+        options_layout.mute_checkbox.border_color.a =
+            (Uint8)(k_color_menu_checkbox_border.a * snake->hud.menu_fade_alpha);
+        options_layout.mute_checkbox.check_color.a =
+            (Uint8)(k_color_menu_checkbox_check.a * snake->hud.menu_fade_alpha);
+        if (ui_checkbox_render(snake->window.sdl_renderer, &options_layout.mute_checkbox, snake->config.mute) ==
+            false) {
             SDL_Log("Failed to render mute checkbox: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_y += row_height + row_gap;
-        const float resume_row_center_y = cursor_y + row_height * 0.5f;
-        cursor_x = row_left;
-
-        if (TTF_DrawRendererText(snake->hud.text_options_resume_label, cursor_x,
-                                 resume_row_center_y - resume_label_size.y * 0.5f) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_resume_label, options_layout.resume_label_pos.x,
+                                 options_layout.resume_label_pos.y) == false) {
             SDL_Log("Failed to render resume label text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_x += (float)resume_label_size.x + content_gap;
-        ui_slider_int_t resume_slider;
-        ui_slider_int_init(&resume_slider, k_color_menu_slider_track, k_color_menu_slider_fill,
-                           k_color_menu_slider_knob, k_color_menu_button_border, CONFIG_RESUME_DELAY_MIN,
-                           CONFIG_RESUME_DELAY_MAX);
-        ui_slider_int_layout(&resume_slider, cursor_x + slider_width * 0.5f, resume_row_center_y, slider_width,
-                             slider_height, knob_width);
-        resume_slider.slider.track_color.a = (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
-        resume_slider.slider.fill_color.a = (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
-        resume_slider.slider.knob_color.a = (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
-        resume_slider.slider.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
-        if (ui_slider_int_render(snake->window.sdl_renderer, &resume_slider, snake->config.resume_delay_seconds) ==
-            false) {
+        options_layout.resume_slider.slider.track_color = k_color_menu_slider_track;
+        options_layout.resume_slider.slider.fill_color = k_color_menu_slider_fill;
+        options_layout.resume_slider.slider.knob_color = k_color_menu_slider_knob;
+        options_layout.resume_slider.slider.border_color = k_color_menu_button_border;
+        options_layout.resume_slider.slider.track_color.a =
+            (Uint8)(k_color_menu_slider_track.a * snake->hud.menu_fade_alpha);
+        options_layout.resume_slider.slider.fill_color.a =
+            (Uint8)(k_color_menu_slider_fill.a * snake->hud.menu_fade_alpha);
+        options_layout.resume_slider.slider.knob_color.a =
+            (Uint8)(k_color_menu_slider_knob.a * snake->hud.menu_fade_alpha);
+        options_layout.resume_slider.slider.border_color.a =
+            (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
+        if (ui_slider_int_render(snake->window.sdl_renderer, &options_layout.resume_slider,
+                                 snake->config.resume_delay_seconds) == false) {
             SDL_Log("Failed to render resume delay slider: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_x += slider_width + content_gap;
-        if (TTF_DrawRendererText(snake->hud.text_options_resume_value, cursor_x,
-                                 resume_row_center_y - resume_value_size.y * 0.5f) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_resume_value, options_layout.resume_value_pos.x,
+                                 options_layout.resume_value_pos.y) == false) {
             SDL_Log("Failed to render resume value text: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        cursor_y += row_height + row_gap;
-        ui_button_t back_button;
-        ui_button_init(&back_button, k_color_menu_button, k_color_menu_button_border);
-        ui_button_layout_from_label(&back_button, &back_label_size, center_x, cursor_y + back_label_size.y * 0.5f, 28.f,
-                                    12.f);
-        back_button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
-        back_button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
-        if (ui_button_render(snake->window.sdl_renderer, &back_button) == false) {
+        options_layout.back_button.fill_color = k_color_menu_button;
+        options_layout.back_button.border_color = k_color_menu_button_border;
+        options_layout.back_button.fill_color.a = (Uint8)(k_color_menu_button.a * snake->hud.menu_fade_alpha);
+        options_layout.back_button.border_color.a = (Uint8)(k_color_menu_button_border.a * snake->hud.menu_fade_alpha);
+        if (ui_button_render(snake->window.sdl_renderer, &options_layout.back_button) == false) {
             SDL_Log("Failed to render options back button: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
         }
 
-        float back_label_x = 0.f;
-        float back_label_y = 0.f;
-        ui_button_get_label_position(&back_button, &back_label_size, &back_label_x, &back_label_y);
-        if (TTF_DrawRendererText(snake->hud.text_options_back_button, back_label_x, back_label_y) == false) {
+        if (TTF_DrawRendererText(snake->hud.text_options_back_button, options_layout.back_label_pos.x,
+                                 options_layout.back_label_pos.y) == false) {
             SDL_Log("Failed to render options back label: %s", SDL_GetError());
             snake->window.is_running = false;
             return;
