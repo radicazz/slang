@@ -74,6 +74,17 @@ target_link_libraries(vector_tests PRIVATE SDL3::SDL3)
 add_test(NAME vector_tests COMMAND vector_tests)
 slang_configure_test(vector_tests)
 
+add_executable(config_tests
+    tests/config_tests.c
+    src/modules/config.c
+)
+
+target_include_directories(config_tests PRIVATE src)
+slang_apply_project_options(config_tests)
+target_link_libraries(config_tests PRIVATE SDL3::SDL3)
+add_test(NAME config_tests COMMAND config_tests)
+slang_configure_test(config_tests)
+
 # Copy assets folder over to build directory for game assets.
 add_custom_command(
     TARGET slang POST_BUILD
