@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (with submodules + full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           submodules: recursive
@@ -60,7 +60,7 @@ jobs:
           } > release-notes.md
 
       - name: Upload release notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-notes
           path: release-notes.md
@@ -81,34 +81,24 @@ jobs:
 
     steps:
       - name: Checkout (with submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
 
       - name: Install build deps (Linux)
         if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build pkg-config gcc g++ \
-            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev \
-            libxkbcommon-dev libwayland-dev wayland-protocols \
-            libegl1-mesa-dev libgl1-mesa-dev \
-            libfreetype6-dev
+        shell: bash
+        run: bash scripts/ci/install_linux_deps.sh
 
       - name: Set up MSVC (Windows)
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
         with:
           arch: x64
 
-      - name: Configure (Ninja, Release)
-        run: >
-          cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build (slang)
-        run: cmake --build build --target slang
+      - name: Configure, build, and test
+        shell: bash
+        run: bash scripts/ci/build_and_test.sh build -DCMAKE_BUILD_TYPE=Release
 
       - name: Package (executable + assets)
         shell: bash
@@ -152,7 +142,7 @@ jobs:
           cmake -E tar cfv "${out}" --format=zip "${package_dir}"
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: slang-${{ github.ref_name }}-${{ matrix.platform }}-x64
           path: slang-${{ github.ref_name }}-${{ matrix.platform }}-x64.zip
@@ -162,12 +152,12 @@ jobs:
     needs: [release-notes, build]
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: artifacts
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           body_path: artifacts/release-notes/release-notes.md
           files: artifacts/**/*.zip

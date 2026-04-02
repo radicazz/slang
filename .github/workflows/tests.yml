@@ -8,31 +8,44 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-release
+            os: ubuntu-latest
+            build_dir: build-release
+            cmake_args: -DCMAKE_BUILD_TYPE=Release
+          - name: linux-debug-sanitizers
+            os: ubuntu-latest
+            build_dir: build-sanitized
+            cmake_args: -DCMAKE_BUILD_TYPE=Debug -DSLANG_ENABLE_SANITIZERS=ON
+          - name: windows-release
+            os: windows-latest
+            build_dir: build-release
+            cmake_args: -DCMAKE_BUILD_TYPE=Release
     steps:
       - name: Checkout (with submodules)
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: recursive
 
       - name: Install build deps
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash scripts/ci/install_linux_deps.sh
+
+      - name: Set up MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: x64
+
+      - name: Configure, build, and test
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build pkg-config gcc g++ \
-            libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxi-dev \
-            libxkbcommon-dev libwayland-dev wayland-protocols \
-            libegl1-mesa-dev libgl1-mesa-dev \
-            libfreetype6-dev
-
-      - name: Configure (Ninja)
-        run: >
-          cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-      - name: Build
-        run: cmake --build build
-
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+          bash scripts/ci/build_and_test.sh "${{ matrix.build_dir }}" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            ${{ matrix.cmake_args }}
