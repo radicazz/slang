@@ -157,7 +157,7 @@ void snake_handle_events(snake_t* snake) {
             if (snake->state == SNAKE_STATE_PAUSED) {
                 snake_menu_layout_t layout;
                 if (snake_menu_get_layout_with_three_buttons(
-                        snake, snake->hud.text_pause, NULL, false, snake->hud.text_resume, true,
+                        snake, snake->hud.text_pause, snake->hud.text_score, true, snake->hud.text_resume, true,
                         snake->hud.text_options_button, true, snake->hud.text_exit_button, true, &layout) == false) {
                     return;
                 }
