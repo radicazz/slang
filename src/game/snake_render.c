@@ -4,6 +4,7 @@
 
 #include "snake_menu.h"
 #include "snake_options_layout.h"
+#include "snake_util.h"
 #include "../modules/ui.h"
 
 static const SDL_Color k_color_menu_overlay = {0, 0, 0, 160};
@@ -17,21 +18,6 @@ static const SDL_Color k_color_menu_checkbox_check = {180, 180, 180, 255};
 static const SDL_Color k_color_menu_slider_track = {40, 40, 40, 255};
 static const SDL_Color k_color_menu_slider_fill = {80, 160, 100, 255};
 static const SDL_Color k_color_menu_slider_knob = {180, 180, 180, 255};
-
-static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, const char* label) {
-    SDL_assert(snake != NULL);
-    SDL_assert(text != NULL);
-    SDL_assert(out_size != NULL);
-    SDL_assert(label != NULL);
-
-    if (TTF_GetTextSize(text, &out_size->x, &out_size->y) == false) {
-        SDL_Log("Failed to measure %s text: %s", label, SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    return true;
-}
 
 void snake_render_frame(snake_t* snake) {
     SDL_assert(snake != NULL);
@@ -63,16 +49,12 @@ void snake_render_frame(snake_t* snake) {
     }
 
     vector2i_t screen_size;
-    if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
-        SDL_Log("Failed to query render output size: %s", SDL_GetError());
-        snake->window.is_running = false;
+    if (snake_get_screen_size(snake, &screen_size) == false) {
         return;
     }
 
     vector2i_t text_size;
-    if (TTF_GetTextSize(snake->hud.text_score, &text_size.x, &text_size.y) == false) {
-        SDL_Log("Failed to measure score text: %s", SDL_GetError());
-        snake->window.is_running = false;
+    if (snake_get_text_size(snake, snake->hud.text_score, &text_size, "score") == false) {
         return;
     }
 
@@ -191,12 +173,6 @@ void snake_render_frame(snake_t* snake) {
         }
 
         if (snake->state == SNAKE_STATE_RESUMING && snake->hud.text_resume_countdown_texture != NULL) {
-            vector2i_t screen_size;
-            if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size.x, &screen_size.y) == false) {
-                SDL_Log("Failed to query render output size: %s", SDL_GetError());
-                snake->window.is_running = false;
-                return;
-            }
             float countdown_x = (float)(screen_size.x - snake->hud.text_resume_countdown_size.x) * 0.5f;
             float countdown_y = layout.title_pos.y + 60.f;
             SDL_FRect dst = {countdown_x, countdown_y, (float)snake->hud.text_resume_countdown_size.x,
@@ -217,7 +193,7 @@ void snake_render_frame(snake_t* snake) {
 
         if (layout.has_button == true) {
             vector2i_t button_text_size;
-            if (get_text_size(snake, button_text, &button_text_size, "menu button") == false) {
+            if (snake_get_text_size(snake, button_text, &button_text_size, "menu button") == false) {
                 return;
             }
 
@@ -233,7 +209,8 @@ void snake_render_frame(snake_t* snake) {
 
         if (snake->state == SNAKE_STATE_PAUSED || snake->state == SNAKE_STATE_START) {
             vector2i_t options_text_size;
-            if (get_text_size(snake, snake->hud.text_options_button, &options_text_size, "options button") == false) {
+            if (snake_get_text_size(snake, snake->hud.text_options_button, &options_text_size, "options button") ==
+                false) {
                 return;
             }
 
@@ -260,7 +237,7 @@ void snake_render_frame(snake_t* snake) {
 
         if (snake->state == SNAKE_STATE_PAUSED) {
             vector2i_t exit_text_size;
-            if (get_text_size(snake, snake->hud.text_exit_button, &exit_text_size, "exit button") == false) {
+            if (snake_get_text_size(snake, snake->hud.text_exit_button, &exit_text_size, "exit button") == false) {
                 return;
             }
 
@@ -307,14 +284,6 @@ void snake_render_frame(snake_t* snake) {
         }
         snake->hud.menu_fade_alpha = fade_alpha;
 
-        vector2i_t screen_size_options;
-        if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &screen_size_options.x,
-                                           &screen_size_options.y) == false) {
-            SDL_Log("Failed to query render output size: %s", SDL_GetError());
-            snake->window.is_running = false;
-            return;
-        }
-
         if (SDL_SetRenderDrawBlendMode(snake->window.sdl_renderer, SDL_BLENDMODE_BLEND) == false) {
             SDL_Log("Failed to set blend mode: %s", SDL_GetError());
             snake->window.is_running = false;
@@ -324,7 +293,7 @@ void snake_render_frame(snake_t* snake) {
         const Uint8 overlay_alpha_options = (Uint8)(k_color_menu_overlay.a * snake->hud.menu_fade_alpha);
         SDL_SetRenderDrawColor(snake->window.sdl_renderer, k_color_menu_overlay.r, k_color_menu_overlay.g,
                                k_color_menu_overlay.b, overlay_alpha_options);
-        SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size_options.x, (float)screen_size_options.y};
+        SDL_FRect overlay_rect = {0.f, 0.f, (float)screen_size.x, (float)screen_size.y};
         SDL_RenderFillRect(snake->window.sdl_renderer, &overlay_rect);
 
         snake_options_layout_t options_layout;

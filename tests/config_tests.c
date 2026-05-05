@@ -67,6 +67,19 @@ static void test_parse_invalid_value_marks_config_invalid(void) {
     TEST_ASSERT_EQUAL_BOOL(true, invalid);
 }
 
+static void test_parse_whitespace_around_equals(void) {
+    const char* contents = "high_score = 7\nmute = no\nvolume = 0.5\nresume_delay = 1\n";
+    game_config_t config = {0};
+    bool invalid = false;
+
+    TEST_ASSERT(config_parse_buffer(contents, &config, &invalid));
+    TEST_ASSERT_EQUAL_BOOL(false, invalid);
+    TEST_ASSERT_EQUAL_SIZE_T(7, config.high_score);
+    TEST_ASSERT_EQUAL_BOOL(false, config.mute);
+    TEST_ASSERT_FLOAT_CLOSE(0.5f, config.volume);
+    TEST_ASSERT_EQUAL_INT(1, config.resume_delay_seconds);
+}
+
 static void test_normalize_clamps_values(void) {
     game_config_t config = {
         .high_score = 4,
@@ -118,6 +131,7 @@ int main(void) {
     run_test("test_parse_valid_buffer", test_parse_valid_buffer);
     run_test("test_parse_invalid_line_marks_config_invalid", test_parse_invalid_line_marks_config_invalid);
     run_test("test_parse_invalid_value_marks_config_invalid", test_parse_invalid_value_marks_config_invalid);
+    run_test("test_parse_whitespace_around_equals", test_parse_whitespace_around_equals);
     run_test("test_normalize_clamps_values", test_normalize_clamps_values);
     run_test("test_serialize_normalizes_and_round_trips", test_serialize_normalizes_and_round_trips);
 

@@ -8,6 +8,19 @@
 #include "game/snake_hud.h"
 #include "modules/config.h"
 
+static bool build_asset_path(const char* relative, char* out, size_t out_size) {
+    const char* base = SDL_GetBasePath();
+    if (base == NULL || base[0] == '\0') {
+        base = "./";
+    }
+    const int written = SDL_snprintf(out, out_size, "%s%s", base, relative);
+    if (written <= 0 || (size_t)written >= out_size) {
+        SDL_Log("Asset path too long for '%s'", relative);
+        return false;
+    }
+    return true;
+}
+
 bool snake_create(snake_t* snake, const char* title) {
     SDL_assert(snake != NULL);
     SDL_assert(title != NULL);
@@ -30,7 +43,9 @@ bool snake_create(snake_t* snake, const char* title) {
         SDL_Log("Warning: Failed to initialize audio, continuing without sound");
     } else {
         snake_apply_audio_settings(snake);
-        if (audio_manager_load_sound(&snake->audio, SOUND_EAT_FOOD, "assets/sounds/bubble-pop.wav") == false) {
+        char eat_sound_path[512];
+        if (build_asset_path("assets/sounds/bubble-pop.wav", eat_sound_path, sizeof(eat_sound_path)) == false ||
+            audio_manager_load_sound(&snake->audio, SOUND_EAT_FOOD, eat_sound_path) == false) {
             SDL_Log("Warning: Failed to load eating sound effect");
         }
     }

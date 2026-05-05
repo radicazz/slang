@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL_log.h>
 
+#include "snake_util.h"
+
 static const float k_options_panel_padding = 20.f;
 static const float k_options_slider_width = 220.f;
 static const float k_options_slider_height = 10.f;
@@ -10,75 +12,47 @@ static const float k_options_checkbox_size = 20.f;
 static const float k_options_content_gap = 16.f;
 static const float k_options_row_gap = 14.f;
 
-static bool get_screen_size(snake_t* snake, vector2i_t* out_size) {
-    SDL_assert(snake != NULL);
-    SDL_assert(out_size != NULL);
-
-    if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &out_size->x, &out_size->y) == false) {
-        SDL_Log("Failed to query render output size: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    return true;
-}
-
-static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, const char* label) {
-    SDL_assert(snake != NULL);
-    SDL_assert(text != NULL);
-    SDL_assert(out_size != NULL);
-    SDL_assert(label != NULL);
-
-    if (TTF_GetTextSize(text, &out_size->x, &out_size->y) == false) {
-        SDL_Log("Failed to measure %s text: %s", label, SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    return true;
-}
-
 bool snake_options_layout_get(snake_t* snake, snake_options_layout_t* out_layout) {
     SDL_assert(snake != NULL);
     SDL_assert(out_layout != NULL);
 
     vector2i_t screen_size;
-    if (get_screen_size(snake, &screen_size) == false) {
+    if (snake_get_screen_size(snake, &screen_size) == false) {
         return false;
     }
 
     vector2i_t title_size;
-    if (get_text_size(snake, snake->hud.text_options_title, &title_size, "options title") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_title, &title_size, "options title") == false) {
         return false;
     }
 
     vector2i_t volume_label_size;
-    if (get_text_size(snake, snake->hud.text_options_volume_label, &volume_label_size, "volume label") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_volume_label, &volume_label_size, "volume label") == false) {
         return false;
     }
 
     vector2i_t volume_value_size;
-    if (get_text_size(snake, snake->hud.text_options_volume_value, &volume_value_size, "volume value") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_volume_value, &volume_value_size, "volume value") == false) {
         return false;
     }
 
     vector2i_t mute_label_size;
-    if (get_text_size(snake, snake->hud.text_options_mute_label, &mute_label_size, "mute label") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_mute_label, &mute_label_size, "mute label") == false) {
         return false;
     }
 
     vector2i_t resume_label_size;
-    if (get_text_size(snake, snake->hud.text_options_resume_label, &resume_label_size, "resume label") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_resume_label, &resume_label_size, "resume label") == false) {
         return false;
     }
 
     vector2i_t resume_value_size;
-    if (get_text_size(snake, snake->hud.text_options_resume_value, &resume_value_size, "resume value") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_resume_value, &resume_value_size, "resume value") == false) {
         return false;
     }
 
     vector2i_t back_label_size;
-    if (get_text_size(snake, snake->hud.text_options_back_button, &back_label_size, "back button") == false) {
+    if (snake_get_text_size(snake, snake->hud.text_options_back_button, &back_label_size, "back button") == false) {
         return false;
     }
 

@@ -2,40 +2,13 @@
 
 #include <SDL3/SDL_log.h>
 
+#include "snake_util.h"
 #include "../modules/ui.h"
 
 static const float k_menu_panel_padding = 20.f;
 static const float k_menu_text_gap = 16.f;
 static const float k_menu_button_padding_x = 28.f;
 static const float k_menu_button_padding_y = 12.f;
-
-static bool get_screen_size(snake_t* snake, vector2i_t* out_size) {
-    SDL_assert(snake != NULL);
-    SDL_assert(out_size != NULL);
-
-    if (SDL_GetCurrentRenderOutputSize(snake->window.sdl_renderer, &out_size->x, &out_size->y) == false) {
-        SDL_Log("Failed to query render output size: %s", SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    return true;
-}
-
-static bool get_text_size(snake_t* snake, TTF_Text* text, vector2i_t* out_size, const char* label) {
-    SDL_assert(snake != NULL);
-    SDL_assert(text != NULL);
-    SDL_assert(out_size != NULL);
-    SDL_assert(label != NULL);
-
-    if (TTF_GetTextSize(text, &out_size->x, &out_size->y) == false) {
-        SDL_Log("Failed to measure %s text: %s", label, SDL_GetError());
-        snake->window.is_running = false;
-        return false;
-    }
-
-    return true;
-}
 
 static void compute_menu_layout(const vector2i_t* screen_size, const vector2i_t* title_size,
                                 const vector2i_t* subtitle_size, bool has_subtitle, const vector2i_t* button_label_size,
@@ -173,26 +146,26 @@ bool snake_menu_get_layout(snake_t* snake, TTF_Text* title_text, TTF_Text* subti
     }
 
     vector2i_t screen_size;
-    if (get_screen_size(snake, &screen_size) == false) {
+    if (snake_get_screen_size(snake, &screen_size) == false) {
         return false;
     }
 
     vector2i_t title_size;
-    if (get_text_size(snake, title_text, &title_size, "title") == false) {
+    if (snake_get_text_size(snake, title_text, &title_size, "title") == false) {
         return false;
     }
 
     vector2i_t subtitle_size = {0, 0};
     if (has_subtitle == true) {
         SDL_assert(subtitle_text != NULL);
-        if (get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
+        if (snake_get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
             return false;
         }
     }
 
     vector2i_t button_size = {0, 0};
     if (has_button == true) {
-        if (get_text_size(snake, button_text, &button_size, "button") == false) {
+        if (snake_get_text_size(snake, button_text, &button_size, "button") == false) {
             return false;
         }
     }
@@ -219,33 +192,33 @@ bool snake_menu_get_layout_with_secondary_button(snake_t* snake, TTF_Text* title
     }
 
     vector2i_t screen_size;
-    if (get_screen_size(snake, &screen_size) == false) {
+    if (snake_get_screen_size(snake, &screen_size) == false) {
         return false;
     }
 
     vector2i_t title_size;
-    if (get_text_size(snake, title_text, &title_size, "title") == false) {
+    if (snake_get_text_size(snake, title_text, &title_size, "title") == false) {
         return false;
     }
 
     vector2i_t subtitle_size = {0, 0};
     if (has_subtitle == true) {
         SDL_assert(subtitle_text != NULL);
-        if (get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
+        if (snake_get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
             return false;
         }
     }
 
     vector2i_t primary_size = {0, 0};
     if (has_primary == true) {
-        if (get_text_size(snake, primary_button_text, &primary_size, "primary button") == false) {
+        if (snake_get_text_size(snake, primary_button_text, &primary_size, "primary button") == false) {
             return false;
         }
     }
 
     vector2i_t secondary_size = {0, 0};
     if (has_secondary == true) {
-        if (get_text_size(snake, secondary_button_text, &secondary_size, "secondary button") == false) {
+        if (snake_get_text_size(snake, secondary_button_text, &secondary_size, "secondary button") == false) {
             return false;
         }
     }
@@ -275,40 +248,40 @@ bool snake_menu_get_layout_with_three_buttons(snake_t* snake, TTF_Text* title_te
     }
 
     vector2i_t screen_size;
-    if (get_screen_size(snake, &screen_size) == false) {
+    if (snake_get_screen_size(snake, &screen_size) == false) {
         return false;
     }
 
     vector2i_t title_size;
-    if (get_text_size(snake, title_text, &title_size, "title") == false) {
+    if (snake_get_text_size(snake, title_text, &title_size, "title") == false) {
         return false;
     }
 
     vector2i_t subtitle_size = {0, 0};
     if (has_subtitle == true) {
         SDL_assert(subtitle_text != NULL);
-        if (get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
+        if (snake_get_text_size(snake, subtitle_text, &subtitle_size, "subtitle") == false) {
             return false;
         }
     }
 
     vector2i_t primary_size = {0, 0};
     if (has_primary == true) {
-        if (get_text_size(snake, primary_button_text, &primary_size, "primary button") == false) {
+        if (snake_get_text_size(snake, primary_button_text, &primary_size, "primary button") == false) {
             return false;
         }
     }
 
     vector2i_t secondary_size = {0, 0};
     if (has_secondary == true) {
-        if (get_text_size(snake, secondary_button_text, &secondary_size, "secondary button") == false) {
+        if (snake_get_text_size(snake, secondary_button_text, &secondary_size, "secondary button") == false) {
             return false;
         }
     }
 
     vector2i_t tertiary_size = {0, 0};
     if (has_tertiary == true) {
-        if (get_text_size(snake, tertiary_button_text, &tertiary_size, "tertiary button") == false) {
+        if (snake_get_text_size(snake, tertiary_button_text, &tertiary_size, "tertiary button") == false) {
             return false;
         }
     }

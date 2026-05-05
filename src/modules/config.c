@@ -69,6 +69,20 @@ static bool config_get_paths(char* out_primary, size_t primary_size, char* out_f
     return success;
 }
 
+static const char* config_trim_left(const char* s) {
+    while (*s == ' ' || *s == '\t') {
+        ++s;
+    }
+    return s;
+}
+
+static void config_trim_right(char* s) {
+    int len = (int)SDL_strlen(s);
+    while (len > 0 && (s[len - 1] == ' ' || s[len - 1] == '\t')) {
+        s[--len] = '\0';
+    }
+}
+
 static bool config_parse_bool(const char* value, bool* out_value) {
     SDL_assert(value != NULL);
     SDL_assert(out_value != NULL);
@@ -157,8 +171,14 @@ bool config_parse_buffer(const char* contents, game_config_t* config, bool* out_
             }
 
             *separator = '\0';
-            const char* key = line;
-            const char* value = separator + 1;
+            config_trim_right(line);
+            const char* key = config_trim_left(line);
+            const char* value_raw = separator + 1;
+            /* value lives in the same buffer; we need a mutable copy to right-trim */
+            char value_buf[256];
+            SDL_strlcpy(value_buf, config_trim_left(value_raw), sizeof(value_buf));
+            config_trim_right(value_buf);
+            const char* value = value_buf;
 
             if (SDL_strcasecmp(key, "high_score") == 0) {
                 size_t parsed = 0;

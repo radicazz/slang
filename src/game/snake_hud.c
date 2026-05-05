@@ -8,17 +8,13 @@ static bool create_resume_countdown_text(snake_hud_t* hud, window_t* window, siz
     SDL_assert(hud != NULL);
     SDL_assert(window != NULL);
 
-    SDL_Log("create_resume_countdown_text: start");
-
     if (hud->text_resume_countdown_texture != NULL) {
-        SDL_Log("create_resume_countdown_text: destroying old texture");
         SDL_DestroyTexture(hud->text_resume_countdown_texture);
         hud->text_resume_countdown_texture = NULL;
     }
     hud->text_resume_countdown_size.x = 0;
     hud->text_resume_countdown_size.y = 0;
 
-    SDL_Log("create_resume_countdown_text: rendering surface");
     SDL_Surface* surface = TTF_RenderText_Blended(window->ttf_font_default, hud->text_resume_countdown_buffer, length,
                                                   (SDL_Color){255, 255, 255, 255});
     if (surface == NULL) {
@@ -26,7 +22,6 @@ static bool create_resume_countdown_text(snake_hud_t* hud, window_t* window, siz
         return false;
     }
 
-    SDL_Log("create_resume_countdown_text: creating texture from surface");
     hud->text_resume_countdown_texture = SDL_CreateTextureFromSurface(window->sdl_renderer, surface);
     hud->text_resume_countdown_size.x = surface->w;
     hud->text_resume_countdown_size.y = surface->h;
@@ -36,7 +31,6 @@ static bool create_resume_countdown_text(snake_hud_t* hud, window_t* window, siz
         return false;
     }
 
-    SDL_Log("create_resume_countdown_text: setting blend mode");
     if (SDL_SetTextureBlendMode(hud->text_resume_countdown_texture, SDL_BLENDMODE_BLEND) == false) {
         SDL_Log("Failed to set resume countdown texture blend mode: %s", SDL_GetError());
         SDL_DestroyTexture(hud->text_resume_countdown_texture);
@@ -46,7 +40,6 @@ static bool create_resume_countdown_text(snake_hud_t* hud, window_t* window, siz
         return false;
     }
 
-    SDL_Log("create_resume_countdown_text: done");
     return true;
 }
 

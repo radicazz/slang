@@ -17,9 +17,23 @@ static bool text_create(window_t* window) {
         return false;
     }
 
-    window->ttf_font_default = TTF_OpenFont("assets/fonts/Segoe UI.ttf", 16);
+    const char* base = SDL_GetBasePath();
+    if (base == NULL || base[0] == '\0') {
+        base = "./";
+    }
+
+    char font_path[512];
+    if (SDL_snprintf(font_path, sizeof(font_path), "%sassets/fonts/Segoe UI.ttf", base) <= 0) {
+        SDL_Log("Failed to build font path");
+        TTF_DestroyRendererTextEngine(window->ttf_text_engine);
+        window->ttf_text_engine = NULL;
+        TTF_Quit();
+        return false;
+    }
+
+    window->ttf_font_default = TTF_OpenFont(font_path, 16);
     if (window->ttf_font_default == NULL) {
-        SDL_Log("Failed to load font 'assets/fonts/Segoe UI.ttf': %s", SDL_GetError());
+        SDL_Log("Failed to load font '%s': %s", font_path, SDL_GetError());
         TTF_DestroyRendererTextEngine(window->ttf_text_engine);
         window->ttf_text_engine = NULL;
         TTF_Quit();
