@@ -147,3 +147,8 @@ bool dynamic_array_is_empty(const dynamic_array_t* array) {
     assert(array != NULL);
     return array->size == 0;
 }
+
+void dynamic_array_clear(dynamic_array_t* array) {
+    assert(array != NULL);
+    array->size = 0;
+}

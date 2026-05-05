@@ -71,7 +71,7 @@ bool snake_hud_create(snake_hud_t* hud, window_t* window, game_config_t* config)
         return false;
     }
 
-    const int pause_written = snprintf(hud->text_pause_buffer, sizeof(hud->text_pause_buffer), "Paused: 0");
+    const int pause_written = snprintf(hud->text_pause_buffer, sizeof(hud->text_pause_buffer), "Paused");
     if (pause_written < 0 || (size_t)pause_written >= sizeof(hud->text_pause_buffer)) {
         SDL_Log("Failed to format initial pause text");
         return false;
@@ -428,24 +428,15 @@ bool snake_hud_update_score(snake_hud_t* hud, size_t score) {
         return false;
     }
 
-    return snake_hud_update_pause(hud, score);
+    return true;
 }
 
+/* snake_hud_update_pause is retained for API compatibility but is a deliberate no-op:
+ * the pause menu title is now the static "Paused" label and the live score text is
+ * displayed as a subtitle, so there is nothing to update here. */
 bool snake_hud_update_pause(snake_hud_t* hud, size_t score) {
     SDL_assert(hud != NULL);
-    SDL_assert(hud->text_pause != NULL);
-
-    const int written = snprintf(hud->text_pause_buffer, sizeof(hud->text_pause_buffer), "Paused: %zu", score);
-    if (written < 0 || (size_t)written >= sizeof(hud->text_pause_buffer)) {
-        SDL_Log("Failed to format pause text.");
-        return false;
-    }
-
-    if (TTF_SetTextString(hud->text_pause, hud->text_pause_buffer, (size_t)written) == false) {
-        SDL_Log("Failed to update pause text: %s", SDL_GetError());
-        return false;
-    }
-
+    (void)score;
     return true;
 }
 

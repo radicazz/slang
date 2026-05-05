@@ -24,28 +24,48 @@ void snake_render_frame(snake_t* snake) {
     SDL_assert(snake->window.sdl_window != NULL);
     SDL_assert(snake->window.sdl_renderer != NULL);
 
+    /* Clear the background to black (empty cell colour). */
+    SDL_SetRenderDrawColor(snake->window.sdl_renderer, 0, 0, 0, 255);
     if (SDL_RenderClear(snake->window.sdl_renderer) == false) {
         SDL_Log("Failed to clear renderer: %s", SDL_GetError());
         snake->window.is_running = false;
         return;
     }
 
-    // Loop through all the cells and render them based on their color.
+    /* Batch rendering: all food cells share the same colour, snake cells each have
+     * a unique gradient shade.  Accumulate food rects and flush with a single call;
+     * render snake cells directly but avoid calling SetRenderDrawColor when the
+     * colour is unchanged from the previous cell. */
+    SDL_FRect food_rects[SNAKE_GRID_X * SNAKE_GRID_Y];
+    int food_rect_count = 0;
+    SDL_Color last_snake_color = {0, 0, 0, 0};
+
     for (int x = 0; x < SNAKE_GRID_X; ++x) {
         for (int y = 0; y < SNAKE_GRID_Y; ++y) {
             const snake_cell_t* const cell = &snake->cells[x][y];
 
-            // TODO: Optimize the use of SDL_SetRenderDrawColor by rendering all tiles of the same color at once.
-            SDL_SetRenderDrawColor(snake->window.sdl_renderer, cell->render_color.r, cell->render_color.g,
-                                   cell->render_color.b, cell->render_color.a);
-
-            SDL_FRect rect;
-            rect.x = (float)(cell->position.x * SNAKE_CELL_SIZE);
-            rect.y = (float)(cell->position.y * SNAKE_CELL_SIZE);
-            rect.w = rect.h = (float)SNAKE_CELL_SIZE;
-
-            SDL_RenderFillRect(snake->window.sdl_renderer, &rect);
+            if (cell->state == SNAKE_CELL_FOOD) {
+                food_rects[food_rect_count++] =
+                    (SDL_FRect){(float)(x * SNAKE_CELL_SIZE), (float)(y * SNAKE_CELL_SIZE), (float)SNAKE_CELL_SIZE,
+                                (float)SNAKE_CELL_SIZE};
+            } else if (cell->state == SNAKE_CELL_SNAKE) {
+                const SDL_Color* c = &cell->render_color;
+                if (c->r != last_snake_color.r || c->g != last_snake_color.g || c->b != last_snake_color.b ||
+                    c->a != last_snake_color.a) {
+                    SDL_SetRenderDrawColor(snake->window.sdl_renderer, c->r, c->g, c->b, c->a);
+                    last_snake_color = *c;
+                }
+                SDL_FRect rect = {(float)(x * SNAKE_CELL_SIZE), (float)(y * SNAKE_CELL_SIZE), (float)SNAKE_CELL_SIZE,
+                                  (float)SNAKE_CELL_SIZE};
+                SDL_RenderFillRect(snake->window.sdl_renderer, &rect);
+            }
+            /* SNAKE_CELL_EMPTY is already black from SDL_RenderClear — no draw call needed. */
         }
+    }
+
+    if (food_rect_count > 0) {
+        SDL_SetRenderDrawColor(snake->window.sdl_renderer, 255, 0, 0, 255);
+        SDL_RenderFillRects(snake->window.sdl_renderer, food_rects, food_rect_count);
     }
 
     vector2i_t screen_size;
@@ -89,6 +109,8 @@ void snake_render_frame(snake_t* snake) {
 
         if (snake->state == SNAKE_STATE_PAUSED) {
             title_text = snake->hud.text_pause;
+            subtitle_text = snake->hud.text_score;
+            has_subtitle = true;
             button_text = snake->hud.text_resume;
             has_button = true;
         } else if (snake->state == SNAKE_STATE_START) {

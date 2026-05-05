@@ -227,8 +227,15 @@ bool snake_state_reset(snake_t* snake) {
 
     SDL_Log("Resetting game state");
 
-    dynamic_array_destroy(&snake->array_food);
-    dynamic_array_destroy(&snake->array_body);
+    /* Re-use the existing allocation when possible (avoids free+malloc on restart). */
+    const bool food_reused = (snake->array_food.data != NULL);
+    const bool body_reused = (snake->array_body.data != NULL);
+    if (food_reused) {
+        dynamic_array_clear(&snake->array_food);
+    }
+    if (body_reused) {
+        dynamic_array_clear(&snake->array_body);
+    }
 
     for (int x = 0; x < SNAKE_GRID_X; ++x) {
         for (int y = 0; y < SNAKE_GRID_Y; ++y) {
@@ -253,12 +260,15 @@ bool snake_state_reset(snake_t* snake) {
     snake->previous_position_tail = snake->position_head;
     snake->current_direction = SNAKE_DIRECTION_UP;
 
-    if (dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8) == false) {
-        SDL_Log("Failed to allocate food array");
-        return false;
+    if (food_reused == false) {
+        if (dynamic_array_create(&snake->array_food, sizeof(vector2i_t), 8) == false) {
+            SDL_Log("Failed to allocate food array");
+            return false;
+        }
     }
 
-    for (size_t i = 0; i < snake->array_food.capacity; ++i) {
+    const size_t food_target = 8;
+    for (size_t i = 0; i < food_target; ++i) {
         vector2i_t food_position;
         if (get_random_empty_position(snake, &food_position) == false) {
             SDL_Log("Warning: Could only spawn %zu food items", i);
@@ -267,21 +277,31 @@ bool snake_state_reset(snake_t* snake) {
 
         if (dynamic_array_append(&snake->array_food, &food_position) == false) {
             SDL_Log("Failed to append food item");
-            dynamic_array_destroy(&snake->array_food);
+            if (food_reused == false) {
+                dynamic_array_destroy(&snake->array_food);
+            }
             return false;
         }
         cell_set_state_and_color(snake, &food_position, SNAKE_CELL_FOOD, &k_color_food);
     }
 
-    if (dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8) == false) {
-        SDL_Log("Failed to allocate body array");
-        dynamic_array_destroy(&snake->array_food);
-        return false;
+    if (body_reused == false) {
+        if (dynamic_array_create(&snake->array_body, sizeof(vector2i_t), 8) == false) {
+            SDL_Log("Failed to allocate body array");
+            if (food_reused == false) {
+                dynamic_array_destroy(&snake->array_food);
+            }
+            return false;
+        }
     }
 
     if (snake_hud_update_score(&snake->hud, snake->array_body.size) == false) {
-        dynamic_array_destroy(&snake->array_food);
-        dynamic_array_destroy(&snake->array_body);
+        if (food_reused == false) {
+            dynamic_array_destroy(&snake->array_food);
+        }
+        if (body_reused == false) {
+            dynamic_array_destroy(&snake->array_body);
+        }
         return false;
     }
 

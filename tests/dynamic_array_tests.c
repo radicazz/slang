@@ -161,6 +161,24 @@ static void test_create_rejects_overflow(void) {
     TEST_ASSERT_EQUAL_SIZE_T(0, array.capacity);
 }
 
+static void test_clear_resets_size_but_keeps_capacity(void) {
+    dynamic_array_t array;
+    TEST_ASSERT(dynamic_array_create(&array, sizeof(int), 4));
+
+    int value = 42;
+    TEST_ASSERT(dynamic_array_append(&array, &value));
+    TEST_ASSERT(dynamic_array_append(&array, &value));
+    const size_t cap_before = array.capacity;
+
+    dynamic_array_clear(&array);
+
+    TEST_ASSERT_EQUAL_SIZE_T(0, array.size);
+    TEST_ASSERT_EQUAL_SIZE_T(cap_before, array.capacity);
+    TEST_ASSERT(array.data != NULL);
+
+    dynamic_array_destroy(&array);
+}
+
 static void run_test(const char* name, test_fn_t fn) {
     g_current_test = name;
     const int failures_before = g_failures;
@@ -181,6 +199,7 @@ int main(void) {
     run_test("test_resize_growth_and_shrink", test_resize_growth_and_shrink);
     run_test("test_is_empty", test_is_empty);
     run_test("test_create_rejects_overflow", test_create_rejects_overflow);
+    run_test("test_clear_resets_size_but_keeps_capacity", test_clear_resets_size_but_keeps_capacity);
 
     if (g_failures > 0) {
         printf("%d/%d test(s) failed.\n", g_failures, g_tests_run);

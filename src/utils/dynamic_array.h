@@ -24,4 +24,9 @@ void dynamic_array_set(dynamic_array_t* array, size_t index, const void* data);
 
 bool dynamic_array_is_empty(const dynamic_array_t* array);
 
+/**
+ * @brief Reset size to 0 while keeping the allocated buffer (no reallocation).
+ */
+void dynamic_array_clear(dynamic_array_t* array);
+
 #endif  // DYNAMIC_ARRAY_H
